@@ -3,142 +3,190 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
-// import Card from "../components/ProfileCard.astro";
 
-function called() {
-  console.log("called");
-}
+const courses = [
+  {
+    title: "Beginner course",
+    description:
+      "An 7-week introductory course to Python, ideal for those with little to no prior programming experience. By committing only 2 hours per week, you will learn all the skills you need to start making your own Python projects! Sessions are held both in person and online. Also recorded for students who miss a live session. Those attending all the lectures will be rewarded with a certificate of completion, and handing in the final project will be awarded a certificate of commendation. Sign up to start the course this semester!",
+    meta: ["7 weeks", "~2 hours per week", "Live + recorded"],
+    hostedButtonId: "RMJ7LXNMAHFUN",
+  },
+  {
+    title: "Advanced course",
+    description:
+      "An 4-week advanced course to Python, ideal for those who just finish the beginner course. The session is only in recording format. Those attending all the lectures will be rewarded with a certificate of completion, and handing in the final project will be awarded a certificate of commendation.",
+    meta: ["4 weeks", "Recorded sessions"],
+    hostedButtonId: "PUADREGKBLFKQ",
+  },
+];
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
-    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <BaseHead title={`Courses · ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+    <script
+      is:inline
+      src="https://www.paypal.com/sdk/js?client-id=BAAECXx62SA0CIhFnFf-Q-wxmD83XXK-OGZU_M_hXpHjVLNch06nwKsxyGo1Oav3eFTeYPXCLIz8niuiuI&components=hosted-buttons&disable-funding=venmo&currency=GBP"
+    ></script>
   </head>
   <body>
     <Header />
     <main>
-      <div class="splash">
-        <div class="detail">
-            <h1>Beginner course</h1>
-            <pre>An 7-week introductory course to Python, ideal for those with little to no prior programming experience. By committing only 2 hours per week, you will learn all the skills you need to start making your own Python projects! Sessions are held both in person and online. Also recorded for students who miss a live session. Those attending all the lectures will be rewarded with a certificate of completion, and handing in the final project will be awarded a certificate of commendation. Sign up to start the course this semester!</pre>
-        </div>
-        <div>
-          <script
-            is:inline
-            src="https://www.paypal.com/sdk/js?client-id=BAAECXx62SA0CIhFnFf-Q-wxmD83XXK-OGZU_M_hXpHjVLNch06nwKsxyGo1Oav3eFTeYPXCLIz8niuiuI&components=hosted-buttons&disable-funding=venmo&currency=GBP"
-          ></script>
-          <div id="paypal-container-RMJ7LXNMAHFUN"></div>
-          <script is:inline>
-            paypal
-              .HostedButtons({
-                hostedButtonId: "RMJ7LXNMAHFUN",
-              })
-              .render("#paypal-container-RMJ7LXNMAHFUN");
-          </script>
-        </div>
-      </div>
-      <div class="splash">
-        <div class="detail">
-            <h1>Advanced course</h1>
-            <pre>An 4-week advanced course to Python, ideal for those who just finish the beginner course. The session is only in recording format. Those attending all the lectures will be rewarded with a certificate of completion, and handing in the final project will be awarded a certificate of commendation. </pre>
-        </div>
-        <div>
-          
-          <div id="paypal-container-PUADREGKBLFKQ"></div>
-          <script is:inline>
-            paypal.HostedButtons({
-              hostedButtonId: "PUADREGKBLFKQ",
-            }).render("#paypal-container-PUADREGKBLFKQ")
-          </script>
-        </div>
+      {
+        courses.map((course) => (
+          <section class="course-card">
+            <div class="course-info">
+              <h1>{course.title}</h1>
+              <p class="lede">{course.description}</p>
+              <ul class="meta">
+                {course.meta.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            </div>
 
-      </div>
+            <aside class="course-buy">
+              <div id={`paypal-container-${course.hostedButtonId}`} class="paypal-slot" />
+              <p class="fineprint">Checkout is handled by PayPal.</p>
+            </aside>
+          </section>
+        ))
+      }
     </main>
     <Footer />
-    <style>
-        main{
-            width: 1000px;
-        }
-        .detail {
-            width:600px
-        }
-        pre{
-            
-    white-space: pre-wrap;       /* Since CSS 2.1 */
-    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-    white-space: -pre-wrap;      /* Opera 4-6 */
-    white-space: -o-pre-wrap;    /* Opera 7 */
-    word-wrap: break-word;       /* Internet Explorer 5.5+ */
-        }
-        .splash *{
-            margin: 0 10px;
-        }
-      .splash {
-        padding: 200px 0 200px 0;
-        display: flex;
-        flex-wrap: wrap;
-        
-    justify-content: space-between;
-      }
-      .splashbuttoncontainer {
-        display: flex;
-      }
-      button svg,
-      button img {
-        margin-right: 10px;
-      }
-      button span {
-        flex-grow: 1;
-      }
-      .member {
-        display: flex;
-        flex-wrap: wrap;
-        flex-direction: row;
-        justify-content: center;
-      }
-      button {
-        margin: 0 20px 0 20px;
-        height: 50px;
-        padding: 0.75rem 1rem;
-        color: var(--provider-color, var(--color-primary));
-        background-color: var(--provider-bg);
-        font-size: 1.1rem;
-        min-height: 62px;
-        border-color: rgba(0, 0, 0, 0.1);
-        border-radius: var(--border-radius);
-        transition: all 0.1s ease-in-out;
-        font-weight: 500;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
 
-      button:hover,
-      a.button:hover {
-        background-color: var(
-          --provider-bg-hover,
-          var(--color-background-hover)
-        );
-        cursor: pointer;
-      }
-
-      button:active,
-      a.button:active {
-        cursor: pointer;
-      }
-
-      button #provider-logo,
-      a.button #provider-logo {
-        width: 25px;
-        display: block;
-      }
-
-      button #provider-logo-dark,
-      a.button #provider-logo-dark {
-        display: none;
-      }
-    </style>
+    {
+      courses.map((course) => (
+        <script is:inline define:vars={{ id: course.hostedButtonId }}>
+          if (window.paypal && window.paypal.HostedButtons) {
+            window.paypal
+              .HostedButtons({ hostedButtonId: id })
+              .render(`#paypal-container-${id}`);
+          }
+        </script>
+      ))
+    }
   </body>
+
+  <style>
+    main {
+      width: min(1080px, calc(100% - 2rem));
+      max-width: none;
+      margin: 0 auto;
+      padding: 4rem 0 6rem;
+      display: grid;
+      gap: 2rem;
+    }
+
+    .course-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 2.5rem;
+      align-items: center;
+      padding: 2.5rem;
+      border: 1px solid rgb(var(--gray-light));
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    .course-info {
+      min-width: 0;
+    }
+
+    .course-info h1 {
+      margin: 0 0 1rem;
+      font-size: 2.2rem;
+      line-height: 1.15;
+    }
+
+    .lede {
+      margin: 0 0 1.5rem;
+      max-width: 62ch;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: rgb(var(--gray-dark));
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .meta li {
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      background: rgb(var(--gray-light));
+      color: rgb(var(--gray-dark));
+      font-size: 0.85rem;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    .course-buy {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      width: 320px;
+      max-width: 100%;
+      min-width: 0;
+      padding: 1.25rem;
+      border: 1px solid rgb(var(--gray-light));
+      border-radius: 14px;
+      background: #fafafa;
+      text-align: center;
+    }
+
+    /* Reserve space so the card does not jump while PayPal renders. */
+    .paypal-slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 72px;
+    }
+
+    /* PayPal injects its own iframe, which the scoped styles cannot target. */
+    .paypal-slot :global(iframe) {
+      max-width: 100%;
+    }
+
+    .fineprint {
+      margin: 0;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: rgb(var(--gray));
+    }
+
+    @media (max-width: 860px) {
+      main {
+        padding: 2.5rem 0 4rem;
+      }
+
+      .course-card {
+        grid-template-columns: 1fr;
+        gap: 1.75rem;
+        padding: 1.5rem;
+      }
+
+      .course-buy {
+        width: 100%;
+        justify-self: stretch;
+      }
+
+      .course-info h1 {
+        font-size: 1.8rem;
+      }
+
+      .lede {
+        font-size: 1rem;
+      }
+    }
+  </style>
 </html>
