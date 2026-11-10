@@ -92,6 +92,16 @@ export default defineConfig({
       disable404Route: true,
       title: 'code creators',
       customCss: ['./src/styles/custom.css'],
+      sidebar: [
+        {
+          label: 'Beginner · Python Foundations',
+          autogenerate: { directory: '24b' },
+        },
+        {
+          label: 'Advanced · Python in Practice',
+          autogenerate: { directory: 'advanced' },
+        },
+      ],
     }),
     tailwind(),
   ],

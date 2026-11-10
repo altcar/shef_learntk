@@ -3,23 +3,16 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
+import { courses, ownsCourse } from "../data/courses";
 
-const courses = [
-  {
-    title: "Beginner course",
-    description:
-      "An 7-week introductory course to Python, ideal for those with little to no prior programming experience. By committing only 2 hours per week, you will learn all the skills you need to start making your own Python projects! Sessions are held both in person and online. Also recorded for students who miss a live session. Those attending all the lectures will be rewarded with a certificate of completion, and handing in the final project will be awarded a certificate of commendation. Sign up to start the course this semester!",
-    meta: ["7 weeks", "~2 hours per week", "Live + recorded"],
-    hostedButtonId: "RMJ7LXNMAHFUN",
-  },
-  {
-    title: "Advanced course",
-    description:
-      "An 4-week advanced course to Python, ideal for those who just finish the beginner course. The session is only in recording format. Those attending all the lectures will be rewarded with a certificate of completion, and handing in the final project will be awarded a certificate of commendation.",
-    meta: ["4 weeks", "Recorded sessions"],
-    hostedButtonId: "PUADREGKBLFKQ",
-  },
-];
+const session = Astro.locals.session;
+
+const forSale = courses
+  .filter((course) => course.purchase)
+  .map((course) => ({
+    course,
+    owned: Boolean(session && ownsCourse(session.courses, course.slug)),
+  }));
 ---
 
 <!doctype html>
@@ -35,30 +28,55 @@ const courses = [
     <Header />
     <main>
       {
-        courses.map((course) => (
+        !session && (
+          <p class="signin-hint">
+            Already enrolled? <a href="/api/login?next=%2Fbuy">Sign in with Discord</a> and your
+            courses will show as bought here.
+          </p>
+        )
+      }
+
+      {
+        forSale.map(({ course, owned }) => (
           <section class="course-card">
             <h1>{course.title}</h1>
-            <p class="lede">{course.description}</p>
+            <p class="lede">{course.purchase!.description}</p>
+
             <ul class="meta">
-              {course.meta.map((item) => (
+              {course.purchase!.meta.map((item) => (
                 <li>{item}</li>
               ))}
             </ul>
 
-            {/*
-              PayPal's hosted button renders an entire checkout form, not just a
-              button. It has to be given the full content width: its wrapper uses
-              `container-type: inline-size` and collapses to 0px wide when it is
-              a flex/grid item, which forces its narrow layout and makes the
-              form ~2000px tall. Plain block flow avoids that.
-            */}
-            <div class="course-buy">
-              <div id={`paypal-container-${course.hostedButtonId}`} class="paypal-slot" />
-              <p class="fineprint">Checkout is handled by PayPal.</p>
-            </div>
+            <ul class="outcomes">
+              {course.outcomes.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+
+            {owned ? (
+              <div class="owned">
+                <p class="owned-title">
+                  <span class="tick" aria-hidden="true">✓</span> You already own this course
+                </p>
+                <p class="owned-body">
+                  It is attached to your Discord account, so there is nothing left to pay.
+                </p>
+                <a class="btn btn-own" href={course.startHref}>
+                  {course.level === "Beginner" ? "Start learning" : "Open the course"} →
+                </a>
+              </div>
+            ) : (
+              <div class="course-buy">
+                <div id={`paypal-container-${course.purchase!.hostedButtonId}`} class="paypal-slot" />
+                <p class="fineprint">Checkout is handled by PayPal.</p>
+              </div>
+            )}
 
             <p class="print-note">
-              Enrol online at <strong>learntk.vercel.app/buy</strong> — checkout is handled by PayPal.
+              {owned
+                ? "You own this course. Open it at learntk.vercel.app/course"
+                : "Enrol online at learntk.vercel.app/buy — checkout is handled by PayPal."}
             </p>
           </section>
         ))
@@ -67,15 +85,17 @@ const courses = [
     <Footer />
 
     {
-      courses.map((course) => (
-        <script is:inline define:vars={{ id: course.hostedButtonId }}>
-          if (window.paypal && window.paypal.HostedButtons) {
-            window.paypal
-              .HostedButtons({ hostedButtonId: id })
-              .render(`#paypal-container-${id}`);
-          }
-        </script>
-      ))
+      forSale
+        .filter(({ owned }) => !owned)
+        .map(({ course }) => (
+          <script is:inline define:vars={{ id: course.purchase!.hostedButtonId }}>
+            if (window.paypal && window.paypal.HostedButtons) {
+              window.paypal
+                .HostedButtons({ hostedButtonId: id })
+                .render(`#paypal-container-${id}`);
+            }
+          </script>
+        ))
     }
   </body>
 
@@ -87,6 +107,16 @@ const courses = [
       padding: 4rem 0 6rem;
       display: grid;
       gap: 2rem;
+    }
+
+    .signin-hint {
+      margin: 0;
+      padding: 0.9rem 1.1rem;
+      border: 1px solid rgb(var(--gray-light));
+      border-radius: 10px;
+      background: #f9fafb;
+      font-size: 0.95rem;
+      text-align: center;
     }
 
     .course-card {
@@ -110,7 +140,8 @@ const courses = [
       color: rgb(var(--gray-dark));
     }
 
-    .meta {
+    .meta,
+    .outcomes {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
@@ -129,6 +160,23 @@ const courses = [
       white-space: nowrap;
     }
 
+    .outcomes {
+      margin-top: 1.25rem;
+      gap: 0.4rem 1.25rem;
+    }
+
+    .outcomes li {
+      font-size: 0.95rem;
+      color: rgb(var(--gray-dark));
+    }
+
+    .outcomes li::before {
+      content: "✓";
+      margin-right: 0.45rem;
+      color: #16a34a;
+      font-weight: 700;
+    }
+
     .course-buy {
       margin-top: 2rem;
       padding-top: 1.5rem;
@@ -136,7 +184,9 @@ const courses = [
       text-align: left;
     }
 
-    /* Must stay a plain block: see the comment in the markup above. */
+    /* Must stay a plain block: see the note in the git history. PayPal's form
+       wrapper uses `container-type: inline-size` and collapses to 0px wide when
+       it is a flex or grid item, which forces its narrow layout. */
     .paypal-slot {
       display: block;
       width: 100%;
@@ -147,7 +197,6 @@ const courses = [
      * PayPal renders its checkout form into our document (not an iframe), so it
      * inherits our typography. global.css sizes h1-h6 with large `em` values,
      * which compounded to a 68px price that wrapped "£19.99 GBP" onto two lines.
-     * Reset headings inside the slot and let PayPal's own sizing apply.
      */
     .paypal-slot :global(h1),
     .paypal-slot :global(h2),
@@ -162,7 +211,6 @@ const courses = [
       color: inherit;
     }
 
-    /* Keep the price readable now that the heading rule no longer inflates it. */
     .paypal-slot :global(#price-text),
     .paypal-slot :global(#discount-price) {
       font-size: 1.6rem;
@@ -170,7 +218,6 @@ const courses = [
       line-height: 1.2;
     }
 
-    /* PayPal injects its own iframe, which scoped styles cannot target. */
     .paypal-slot :global(iframe) {
       max-width: 100%;
     }
@@ -181,6 +228,54 @@ const courses = [
       line-height: 1.4;
       color: rgb(var(--gray));
       text-align: center;
+    }
+
+    .owned {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      border: 1px solid #86efac;
+      border-radius: 14px;
+      background: #f0fdf4;
+      text-align: left;
+    }
+
+    .owned-title {
+      margin: 0 0 0.35rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #166534;
+    }
+
+    .tick {
+      margin-right: 0.4rem;
+    }
+
+    .owned-body {
+      margin: 0 0 1rem;
+      font-size: 0.95rem;
+      color: #15803d;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-own {
+      background: #166534;
+      color: #fff;
+    }
+
+    .btn-own:hover {
+      background: #14532d;
     }
 
     .print-note {
@@ -203,6 +298,10 @@ const courses = [
       .lede {
         font-size: 1rem;
       }
+
+      .btn {
+        width: 100%;
+      }
     }
 
     /*
@@ -222,6 +321,11 @@ const courses = [
         width: auto;
         max-width: none;
         padding: 0;
+      }
+
+      .signin-hint,
+      .course-buy {
+        display: none !important;
       }
 
       .course-card {
@@ -251,8 +355,13 @@ const courses = [
         padding: 0.15rem 0.5rem;
       }
 
-      .course-buy {
-        display: none !important;
+      .owned {
+        border: 1px solid #999;
+        background: transparent;
+      }
+
+      .owned .btn {
+        display: none;
       }
 
       .print-note {

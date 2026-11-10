@@ -78,6 +78,18 @@ export const discordConfig = {
   adminRoleIds: () => listEnv("DISCORD_ADMIN_ROLE_IDS", DEFAULT_ADMIN_ROLE_IDS),
 };
 
+/**
+ * Role ids that unlock a specific course.
+ *
+ * Courses each have their own Discord role, so buying one course does not unlock
+ * the other. Override with e.g. `DISCORD_ROLE_24B` or `DISCORD_ROLE_ADVANCED`.
+ */
+export function courseRoleIds(slug: string): string[] {
+  const key = `DISCORD_ROLE_${slug.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
+  const fallback = slug === "24b" ? DEFAULT_MEMBER_ROLE_IDS : [];
+  return listEnv(key, fallback);
+}
+
 /** Absolute origin of the site, used for redirects and Open Graph tags. */
 export function siteUrl(): string {
   const explicit = readEnv("SITE_URL") ?? readEnv("VITE_BASE_URL");

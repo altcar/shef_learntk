@@ -4,7 +4,16 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import Card from "../components/ProfileCard.astro";
+import { courses, ownsCourse } from "../data/courses";
 import { loginUrl } from "../lib/access";
+
+const session = Astro.locals.session;
+const signedIn = Boolean(Astro.locals.user);
+const owned = session?.courses ?? [];
+const ownedCount = courses.filter((course) => ownsCourse(owned, course.slug)).length;
+
+const beginner = courses.find((course) => course.slug === "24b")!;
+const advanced = courses.find((course) => course.slug === "advanced")!;
 
 const tutors = [
   {
@@ -30,6 +39,71 @@ const tutors = [
     image: "/WhatsApp Image 2024-02-20 at 20_52_59_c2b5c18e.webp",
   },
 ];
+
+const highlights = [
+  {
+    title: "Taught by students, for students",
+    body: "Sessions are run by a small team who learned Python recently enough to remember what actually confused them.",
+  },
+  {
+    title: "Two hours a week",
+    body: "Each week is one session plus a short project. It is designed to fit around a full timetable, not replace it.",
+  },
+  {
+    title: "Live and recorded",
+    body: "Join in person or online. Every session is recorded, so missing a week does not mean falling behind.",
+  },
+  {
+    title: "A certificate that means something",
+    body: "Attend the lectures for a certificate of completion; hand in the final project for a certificate of commendation.",
+  },
+];
+
+const steps = [
+  {
+    title: "Join the community",
+    body: "Courses are delivered through our Discord server. That is where sessions, support and your course role live.",
+  },
+  {
+    title: "Pick a course",
+    body: "Start with Python Foundations if you are new to code. Move to Python in Practice once the basics feel comfortable.",
+  },
+  {
+    title: "Get your role",
+    body: "After checkout we attach the matching role to your Discord account. Sign in here and the course unlocks automatically.",
+  },
+  {
+    title: "Work through the weeks",
+    body: "Each week has notes, a recording and a small project. Tick them off as you go and your dashboard tracks the rest.",
+  },
+];
+
+const faqs = [
+  {
+    q: "Do I need any programming experience?",
+    a: "Not for Python Foundations. It starts from installing Python and writing your first line. Python in Practice assumes you have finished Foundations or can already use functions, loops and dictionaries.",
+  },
+  {
+    q: "What if I miss a live session?",
+    a: "Every session is recorded and posted with the notes, so you can catch up at your own pace. Mentors also answer questions in the Discord support channel.",
+  },
+  {
+    q: "How do I get access after buying?",
+    a: "Your purchase is linked to a role in our Discord server. Once the role is applied, sign in with Discord and the course appears on your dashboard.",
+  },
+  {
+    q: "How long do I keep access?",
+    a: "Access follows your Discord role, so the course stays with your account for as long as you are a member of the community.",
+  },
+  {
+    q: "Is it all Python?",
+    a: "The beginner course is pure Python. The advanced course stays in Python but points it at real work: spreadsheets, charts, a database-backed app, and calling AI models.",
+  },
+  {
+    q: "Do I get a certificate?",
+    a: "Yes. Attending the lectures earns a certificate of completion, and submitting the final project earns a certificate of commendation you can put on LinkedIn or a CV.",
+  },
+];
 ---
 
 <!doctype html>
@@ -41,49 +115,167 @@ const tutors = [
     <Header />
     <main>
       <section class="hero">
-        <h1>🧑‍🚀 Hello, Coders!</h1>
+        <p class="eyebrow">CodeCreators · a student-led project</p>
+        <h1>Learn Python properly, with people around you</h1>
+        <p class="hero-lede">
+          Two courses, one community. Start from zero and finish with a project you can show, or
+          take the advanced path into spreadsheets, charts, real apps and AI.
+        </p>
 
         <div class="cta">
-          <div class="cta-item">
-            <span class="cta-kicker">Join the squad!</span>
-            <a class="btn btn-buy" href="/buy">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"></path>
-              </svg>
-              Get the course now
-            </a>
-          </div>
+          {
+            signedIn ? (
+              <>
+                <div class="cta-item">
+                  <span class="cta-kicker">
+                    {ownedCount > 0 ? "You're enrolled" : "Signed in"}
+                  </span>
+                  <a class="btn btn-primary" href="/course">
+                    Go to your dashboard →
+                  </a>
+                </div>
+                <div class="cta-item">
+                  <span class="cta-kicker">Want another course?</span>
+                  <a class="btn btn-secondary" href="/buy">See the courses</a>
+                </div>
+              </>
+            ) : (
+              <>
+                <div class="cta-item">
+                  <span class="cta-kicker">Join the squad!</span>
+                  <a class="btn btn-secondary" href="/buy">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"></path>
+                    </svg>
+                    Get the course now
+                  </a>
+                </div>
+                <div class="cta-item">
+                  <span class="cta-kicker">Already a member?</span>
+                  <a class="btn btn-discord" href={loginUrl("/course")}>
+                    <img
+                      loading="lazy"
+                      height="24"
+                      width="24"
+                      src="https://authjs.dev/img/providers/discord.svg"
+                      alt=""
+                    />
+                    Sign in with Discord
+                  </a>
+                </div>
+              </>
+            )
+          }
+        </div>
 
-          <div class="cta-item">
-            <span class="cta-kicker">Already a member?</span>
-            <a class="btn btn-discord" href={loginUrl("/course")}>
-              <img
-                loading="lazy"
-                height="24"
-                width="24"
-                src="https://authjs.dev/img/providers/discord.svg"
-                alt=""
-              />
-              Sign in with Discord
-            </a>
+        <p class="hero-note">
+          No prior experience needed · ~2 hours a week · every session recorded
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>Why learn with us</h2>
+        <ul class="highlights">
+          {
+            highlights.map((item) => (
+              <li>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>The courses</h2>
+        <div class="course-grid">
+          {
+            [beginner, advanced].map((course) => (
+              <article class="course-tile">
+                <p class="tile-level">{course.level}</p>
+                <h3>{course.title}</h3>
+                <p class="tile-tagline">{course.tagline}</p>
+                <p class="tile-format">{course.format}</p>
+                <ul class="tile-outcomes">
+                  {course.outcomes.map((outcome) => (
+                    <li>{outcome}</li>
+                  ))}
+                </ul>
+                <div class="tile-actions">
+                  {ownsCourse(owned, course.slug) ? (
+                    <a class="btn btn-small btn-primary" href="/course">
+                      Go to course
+                    </a>
+                  ) : (
+                    <a class="btn btn-small btn-secondary" href="/buy">
+                      Find out more
+                    </a>
+                  )}
+                  <span class="tile-weeks">
+                    {course.weeks.length} {course.level === "Beginner" ? "weeks" : "modules"}
+                  </span>
+                </div>
+              </article>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>How it works</h2>
+        <ol class="steps">
+          {
+            steps.map((step, index) => (
+              <li>
+                <span class="step-number">{index + 1}</span>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <section class="section">
+        <h2>What you actually cover</h2>
+        <div class="curriculum">
+          <div class="curriculum-column">
+            <h3>{beginner.title}</h3>
+            <ol class="week-list">
+              {
+                beginner.weeks.map((week) => (
+                  <li>
+                    <span class="week-name">{week.title}</span>
+                    <span class="week-summary">{week.summary}</span>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+          <div class="curriculum-column">
+            <h3>{advanced.title}</h3>
+            <ol class="week-list">
+              {
+                advanced.weeks.map((week) => (
+                  <li>
+                    <span class="week-name">{week.title}</span>
+                    <span class="week-summary">{week.summary}</span>
+                  </li>
+                ))
+              }
+            </ol>
           </div>
         </div>
       </section>
 
-      <section class="tutors">
-        <h2>Your Tutor:</h2>
+      <section class="section tutors">
+        <h2>Your tutors</h2>
         <ul class="cards">
           {
             tutors.map((tutor) => (
@@ -94,6 +286,50 @@ const tutors = [
           }
         </ul>
       </section>
+
+      <section class="section">
+        <h2>Questions</h2>
+        <div class="faq">
+          {
+            faqs.map((item) => (
+              <details>
+                <summary>{item.q}</summary>
+                <p>{item.a}</p>
+              </details>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="closing">
+        <h2>Ready when you are</h2>
+        <p>
+          Pick a course, join the Discord, and you can be writing your first program this week.
+        </p>
+        <div class="cta">
+          <div class="cta-item">
+            <a class="btn btn-primary" href={signedIn ? "/course" : "/buy"}>
+              {signedIn ? "Go to your dashboard" : "See the courses"}
+            </a>
+          </div>
+          {
+            !signedIn && (
+              <div class="cta-item">
+                <a class="btn btn-discord" href={loginUrl("/course")}>
+                  <img
+                    loading="lazy"
+                    height="24"
+                    width="24"
+                    src="https://authjs.dev/img/providers/discord.svg"
+                    alt=""
+                  />
+                  Sign in with Discord
+                </a>
+              </div>
+            )
+          }
+        </div>
+      </section>
     </main>
     <Footer />
   </body>
@@ -103,18 +339,42 @@ const tutors = [
       width: min(1100px, calc(100% - 2rem));
       max-width: none;
       margin: 0 auto;
-      padding: 4rem 0 5rem;
+      padding: 3rem 0 5rem;
     }
 
     .hero {
       text-align: center;
-      padding: 1rem 0 4rem;
+      padding: 2rem 0 3rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgb(var(--gray));
     }
 
     .hero h1 {
-      margin: 0 0 2.5rem;
+      margin: 0 auto 1rem;
+      max-width: 20ch;
       font-size: clamp(2rem, 5vw, 3.05rem);
-      line-height: 1.15;
+      line-height: 1.1;
+    }
+
+    .hero-lede {
+      margin: 0 auto 2.25rem;
+      max-width: 60ch;
+      font-size: 1.1rem;
+      line-height: 1.7;
+      color: rgb(var(--gray-dark));
+    }
+
+    .hero-note {
+      margin: 1.75rem 0 0;
+      font-size: 0.9rem;
+      color: rgb(var(--gray));
     }
 
     .cta {
@@ -159,13 +419,28 @@ const tutors = [
         border-color 0.15s ease;
     }
 
-    .btn-buy {
+    .btn-small {
+      min-height: 44px;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.95rem;
+    }
+
+    .btn-primary {
+      background: #111827;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #374151;
+    }
+
+    .btn-secondary {
       background: #f3f4f6;
       border-color: #d1d5db;
       color: #111827;
     }
 
-    .btn-buy:hover {
+    .btn-secondary:hover {
       background: #e5e7eb;
     }
 
@@ -184,13 +459,226 @@ const tutors = [
       filter: brightness(0) invert(1);
     }
 
-    .tutors {
+    .section {
+      padding: 3rem 0;
+      border-top: 1px solid rgb(var(--gray-light));
+    }
+
+    .section > h2 {
+      margin: 0 0 2rem;
+      font-size: clamp(1.5rem, 3.5vw, 2rem);
       text-align: center;
     }
 
-    .tutors h2 {
-      margin: 0 0 2rem;
-      font-size: clamp(1.6rem, 4vw, 2.2rem);
+    .highlights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1.25rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .highlights li {
+      padding: 1.4rem;
+      border: 1px solid rgb(var(--gray-light));
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .highlights h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .highlights p {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: rgb(var(--gray-dark));
+    }
+
+    .course-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .course-tile {
+      display: flex;
+      flex-direction: column;
+      padding: 1.75rem;
+      border: 1px solid rgb(var(--gray-light));
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .tile-level {
+      margin: 0 0 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgb(var(--gray));
+    }
+
+    .course-tile h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+    }
+
+    .tile-tagline {
+      margin: 0 0 0.75rem;
+      color: rgb(var(--gray-dark));
+    }
+
+    .tile-format {
+      margin: 0 0 1rem;
+      font-size: 0.85rem;
+      color: rgb(var(--gray));
+    }
+
+    .tile-outcomes {
+      margin: 0 0 1.5rem;
+      padding: 0;
+      list-style: none;
+      font-size: 0.95rem;
+    }
+
+    .tile-outcomes li {
+      padding-left: 1.35rem;
+      position: relative;
+      margin-bottom: 0.35rem;
+    }
+
+    .tile-outcomes li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #16a34a;
+      font-weight: 700;
+    }
+
+    .tile-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: auto;
+    }
+
+    .tile-weeks {
+      font-size: 0.85rem;
+      color: rgb(var(--gray));
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: step;
+    }
+
+    .steps li {
+      padding: 1.4rem;
+      border-radius: 12px;
+      background: #f9fafb;
+      border: 1px solid rgb(var(--gray-light));
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      margin-bottom: 0.75rem;
+      border-radius: 50%;
+      background: #111827;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .steps h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.05rem;
+    }
+
+    .steps p {
+      margin: 0;
+      font-size: 0.93rem;
+      line-height: 1.6;
+      color: rgb(var(--gray-dark));
+    }
+
+    .curriculum {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+    }
+
+    .curriculum-column h3 {
+      margin: 0 0 1rem;
+      font-size: 1.2rem;
+    }
+
+    .week-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: week;
+    }
+
+    .week-list li {
+      position: relative;
+      padding: 0 0 1rem 2.25rem;
+      border-left: 2px solid rgb(var(--gray-light));
+      margin-left: 0.6rem;
+    }
+
+    .week-list li:last-child {
+      padding-bottom: 0;
+      border-left-color: transparent;
+    }
+
+    .week-list li::before {
+      counter-increment: week;
+      content: counter(week);
+      position: absolute;
+      left: -0.95rem;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid rgb(var(--gray-light));
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: rgb(var(--gray-dark));
+    }
+
+    .week-name {
+      display: block;
+      font-weight: 600;
+    }
+
+    .week-summary {
+      display: block;
+      margin-top: 0.2rem;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: rgb(var(--gray));
+    }
+
+    .tutors {
+      text-align: center;
     }
 
     .cards {
@@ -203,17 +691,87 @@ const tutors = [
       list-style: none;
     }
 
+    /* A definite width per card, so the boxes reserve space before the
+       lazy-loaded photos arrive instead of collapsing to the name and icons. */
+    .tutors .cards > li {
+      width: 240px;
+      max-width: 100%;
+    }
+
+    .faq {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .faq details {
+      border-bottom: 1px solid rgb(var(--gray-light));
+      padding: 0.9rem 0;
+    }
+
+    .faq summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1.02rem;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .faq summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq summary::after {
+      content: "+";
+      font-weight: 400;
+      font-size: 1.3rem;
+      line-height: 1;
+      color: rgb(var(--gray));
+    }
+
+    .faq details[open] summary::after {
+      content: "–";
+    }
+
+    .faq p {
+      margin: 0.75rem 0 0;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: rgb(var(--gray-dark));
+    }
+
+    .closing {
+      padding: 3.5rem 2rem;
+      margin-top: 1rem;
+      border-radius: 20px;
+      background: #f9fafb;
+      border: 1px solid rgb(var(--gray-light));
+      text-align: center;
+    }
+
+    .closing h2 {
+      margin: 0 0 0.75rem;
+      font-size: clamp(1.5rem, 3.5vw, 2rem);
+    }
+
+    .closing > p {
+      margin: 0 auto 2rem;
+      max-width: 46ch;
+      color: rgb(var(--gray-dark));
+    }
+
     @media (max-width: 720px) {
       main {
-        padding: 2rem 0 3rem;
+        padding: 1.5rem 0 3rem;
       }
 
       .hero {
-        padding: 0 0 2.5rem;
+        padding: 1rem 0 2rem;
       }
 
-      .hero h1 {
-        margin-bottom: 1.75rem;
+      .hero-lede {
+        font-size: 1rem;
       }
 
       .cta {
@@ -227,6 +785,18 @@ const tutors = [
       .btn {
         width: 100%;
         font-size: 1rem;
+      }
+
+      .section {
+        padding: 2.25rem 0;
+      }
+
+      .tutors .cards > li {
+        width: 280px;
+      }
+
+      .closing {
+        padding: 2.25rem 1.25rem;
       }
     }
   </style>

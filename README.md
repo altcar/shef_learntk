@@ -108,6 +108,8 @@ npm run dev                  # http://localhost:4321
 | `SESSION_SECRET` | recommended | Cookie signing key |
 | `DISCORD_GUILD_ID` | no | Server that owns membership (defaults to `746789586914639933`) |
 | `DISCORD_MEMBER_ROLE_IDS` | no | Comma separated role ids that unlock the course |
+| `DISCORD_ROLE_24B` | no | Role ids for the beginner course (falls back to `DISCORD_MEMBER_ROLE_IDS`) |
+| `DISCORD_ROLE_ADVANCED` | no | Role ids for the advanced course (empty = nobody owns it yet) |
 | `DISCORD_ADMIN_ROLE_IDS` | no | Comma separated instructor role ids |
 | `DISCORD_INVITE_URL` | no | Where "Join the community server" points |
 | `SITE_URL` | no | Canonical origin |
@@ -121,6 +123,21 @@ npm run dev                  # http://localhost:4321
 3. Copy the client id and secret into your environment.
 4. Make sure the roles listed in `DISCORD_MEMBER_ROLE_IDS` exist in your server
    and that paying members actually receive them.
+
+### One role per course
+
+Entitlement is per course, so buying one course does not unlock the other. Each
+course reads its own role list:
+
+| Course | Environment variable | Default |
+| --- | --- | --- |
+| Python Foundations (`/24b`) | `DISCORD_ROLE_24B` | `DISCORD_MEMBER_ROLE_IDS` |
+| Python in Practice (`/advanced`) | `DISCORD_ROLE_ADVANCED` | none — nobody owns it |
+
+Create a Discord role per course, put its id in the matching variable, and
+assign members that role after their purchase. The owned courses are baked into
+the signed session at sign-in, which is what `/buy` uses to show "already owned"
+instead of a checkout button.
 
 ### Testing auth without a Discord account
 
@@ -143,19 +160,33 @@ production credentials.**
 Course pages are Markdown in `client/src/content/docs/<course>/`:
 
 ```
-client/src/content/docs/24b/
-├── index.mdx    # /24b
-├── Week1.md     # /24b/week1
-└── Week7.md
+client/src/content/docs/
+├── 24b/            # Python Foundations  -> /24b
+│   ├── index.mdx
+│   ├── Week1.md
+│   └── Week7.md
+└── advanced/       # Python in Practice  -> /advanced
+    ├── index.md
+    ├── oop.md
+    ├── excel.md
+    ├── matplotlib.md
+    ├── apps.md
+    └── ai.md
 ```
+
+The Starlight sidebar groups these automatically (see `sidebar` in
+`astro.config.mjs`); each advanced page sets `sidebar: { order: N }` so the
+modules stay in teaching order.
 
 To add a week:
 
 1. Add `Week8.md` to the folder.
-2. Add one entry to `client/src/data/courses.ts` in the `24b` course.
+2. Add one entry to the matching course in `client/src/data/courses.ts`.
 
-The dashboard, progress bar and "Continue" button all derive from
-`src/data/courses.ts`, so nothing else needs touching.
+The dashboard, progress bar, purchase page and "Continue" button all derive from
+`src/data/courses.ts`, so nothing else needs touching. A new course also needs
+its URL prefix added to `COURSE_ROUTES` in `src/middleware.ts` and to
+`PROTECTED_PREFIXES` in `src/lib/access.ts`.
 
 Put downloadable material in `client/src/assets/lessons/` and link it as
 `/api/lessons/<file>`. Anything in `client/public/` is served to the public
@@ -203,10 +234,13 @@ from it) or add your hostname to `allowedDomains()` in `astro.config.mjs`.
 
 | Capability | Status |
 | --- | --- |
-| Public course landing pages | ✅ `client/src/pages/index.astro`, `/buy` |
-| Discord SSO with role-based entitlement | ✅ |
-| Gated curriculum | ✅ `/24b` |
+| Public course landing pages | ✅ `/` and `/buy` |
+| Discord SSO with role-based entitlement | ✅ per course |
+| Gated curriculum | ✅ `/24b` and `/advanced` |
+| Beginner course (7 weeks) | ✅ |
+| Advanced course (5 modules: OOP, Excel, matplotlib, apps, AI) | ✅ |
 | Learner dashboard | ✅ `/course` |
+| "Already owned" state on the purchase page | ✅ |
 | Lesson progress | ✅ signed session + optional Firestore mirror |
 | Certificate name / profile | ✅ `/welcome` |
 | Certificate issuing | 🚧 scaffolded in `src/data/courses.ts` |

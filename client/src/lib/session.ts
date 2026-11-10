@@ -16,7 +16,7 @@ const decoder = new TextDecoder();
 
 export interface SessionPayload {
   /** Schema version, lets us invalidate old cookies after a breaking change. */
-  v: 1;
+  v: 2;
   /** Discord user id. */
   sub: string;
   username: string;
@@ -30,6 +30,8 @@ export interface SessionPayload {
   member: boolean;
   /** True when the user holds an instructor/admin role. */
   admin: boolean;
+  /** Slugs of the courses this member owns. */
+  courses: string[];
   certificateName: string | null;
   /** Lesson ids the learner has marked complete. */
   progress: Record<string, string>;
@@ -92,7 +94,7 @@ export function createSession(input: SessionInput): SessionPayload {
   const now = Date.now();
   return {
     ...input,
-    v: 1,
+    v: 2,
     iat: now,
     exp: now + SESSION_TTL_MS,
   };
@@ -147,7 +149,7 @@ export async function deserializeSession(
     return null;
   }
 
-  if (!payload || payload.v !== 1 || typeof payload.sub !== "string") {
+  if (!payload || payload.v !== 2 || typeof payload.sub !== "string") {
     return null;
   }
   if (typeof payload.exp !== "number" || payload.exp <= Date.now()) {

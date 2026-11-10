@@ -16,6 +16,8 @@ export interface SessionUser {
   email: string | null;
   roles: string[];
   admin: boolean;
+  /** Course slugs this member owns. */
+  courses: string[];
   certificateName: string | null;
 }
 
@@ -25,6 +27,7 @@ export interface SessionUser {
  */
 export const PROTECTED_PREFIXES = [
   "/24b", // Starlight beginner course
+  "/advanced", // Starlight advanced course
   "/week1", // legacy Starlight route for the final project submission page
   "/learn", // future curriculum routes
   "/course", // learner dashboard + lesson index

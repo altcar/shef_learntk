@@ -3,9 +3,9 @@ import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
-import { courses, completedInCourse, lessonCount } from '../../data/courses';
+import { courses, completedInCourse, lessonCount, ownsCourse } from '../../data/courses';
 
-// The middleware guarantees an authenticated, entitled member here.
+// The middleware guarantees an authenticated member here.
 const session = Astro.locals.session;
 const user = Astro.locals.user;
 
@@ -16,8 +16,9 @@ if (!session || !user) {
 const progress = session.progress ?? {};
 
 const summaries = courses.map((course) => {
+  const owned = ownsCourse(session.courses, course.slug);
   const total = lessonCount(course);
-  const completed = completedInCourse(course, progress);
+  const completed = owned ? completedInCourse(course, progress) : 0;
   const nextLesson =
     course.weeks
       .flatMap((week) => week.lessons)
@@ -25,12 +26,15 @@ const summaries = courses.map((course) => {
 
   return {
     course,
+    owned,
     total,
     completed,
     percent: total === 0 ? 0 : Math.round((completed / total) * 100),
     nextLesson,
   };
 });
+
+const ownedCount = summaries.filter((summary) => summary.owned).length;
 ---
 
 <!doctype html>
@@ -46,7 +50,8 @@ const summaries = courses.map((course) => {
           <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-gray-500">Dashboard</p>
           <h1 class="text-4xl font-bold">Welcome back, {user.certificateName ?? user.displayName}</h1>
           <p class="mt-2 text-gray-600">
-            {user.admin ? 'Instructor access · ' : ''}Signed in with Discord as {user.username}
+            {user.admin ? 'Instructor access · ' : ''}Signed in with Discord as {user.username} ·
+            {ownedCount === 1 ? ' 1 course' : ` ${ownedCount} courses`}
           </p>
         </div>
         <a class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100" href="/api/session">
@@ -54,18 +59,33 @@ const summaries = courses.map((course) => {
         </a>
       </header>
 
+      {
+        ownedCount === 0 && (
+          <p class="mb-8 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            Your Discord account does not have a course role yet. If you just bought a course, roles
+            are usually applied within a few minutes — <a class="underline" href="/api/login?next=%2Fcourse">sign in again</a>
+            once you have it, or <a class="underline" href="/buy">see the courses</a>.
+          </p>
+        )
+      }
+
       <div class="grid gap-8 md:grid-cols-2">
         {
-          summaries.map(({ course, total, completed, percent, nextLesson }) => (
-            <section class="rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <div class="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
+          summaries.map(({ course, owned, total, completed, percent, nextLesson }) => (
+            <section class:list={['rounded-2xl border p-6 shadow-sm', owned ? 'border-gray-200' : 'border-dashed border-gray-300 bg-gray-50']}>
+              <div class="mb-1 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
                 <span>{course.level}</span>
-                {course.status === 'preview' && <span class="rounded bg-gray-200 px-2 py-0.5">Coming soon</span>}
+                {owned ? (
+                  <span class="rounded bg-green-100 px-2 py-0.5 text-green-800">Enrolled</span>
+                ) : (
+                  <span class="rounded bg-gray-200 px-2 py-0.5">Not enrolled</span>
+                )}
               </div>
+
               <h2 class="text-2xl font-bold">{course.title}</h2>
               <p class="mt-2 text-gray-600">{course.tagline}</p>
 
-              {total > 0 && (
+              {owned && total > 0 && (
                 <div class="mt-6">
                   <div class="mb-2 flex items-center justify-between text-sm text-gray-600">
                     <span data-progress-label>{completed} of {total} weeks complete</span>
@@ -82,23 +102,29 @@ const summaries = courses.map((course) => {
               )}
 
               <div class="mt-6 flex flex-wrap gap-3">
-                {course.status === 'live' && nextLesson ? (
-                  <a class="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white hover:bg-gray-700" href={nextLesson.href}>
-                    {completed === 0 ? 'Start course' : 'Continue'}
-                  </a>
+                {owned ? (
+                  <>
+                    {nextLesson ? (
+                      <a class="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white hover:bg-gray-700" href={nextLesson.href}>
+                        {completed === 0 ? 'Start course' : 'Continue'}
+                      </a>
+                    ) : (
+                      <a class="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white hover:bg-gray-700" href={course.startHref}>
+                        Revisit course
+                      </a>
+                    )}
+                    <a class="rounded-lg border border-gray-300 px-4 py-2 font-medium hover:bg-gray-100" href={course.startHref}>
+                      Curriculum
+                    </a>
+                  </>
                 ) : (
-                  <a class="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white hover:bg-gray-700" href={course.startHref}>
-                    View course
-                  </a>
-                )}
-                {course.slug === '24b' && (
-                  <a class="rounded-lg border border-gray-300 px-4 py-2 font-medium hover:bg-gray-100" href="/24b">
-                    Curriculum index
+                  <a class="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white hover:bg-gray-700" href="/buy">
+                    {course.title} — see details
                   </a>
                 )}
               </div>
 
-              {course.weeks.length > 0 && (
+              {owned && course.weeks.length > 0 && (
                 <ul class="mt-6 space-y-2 border-t border-gray-100 pt-4" data-course={course.slug}>
                   {course.weeks.map((week) => (
                     <li class="flex items-center gap-3">

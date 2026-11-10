@@ -5,6 +5,8 @@
 // .env.local, which means anyone holding a client secret can impersonate any
 // Discord id. Never run this against production credentials and never commit
 // the resulting cookie.
+//
+// Usage: node scripts/mint-session.mjs [member|both|noRole|expired|tampered]
 import fs from "node:fs";
 import path from "node:path";
 
@@ -15,7 +17,10 @@ for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
   if (match) env[match[1]] = match[2];
 }
 
-const secret = `learntk-session-v1:${env.DISCORD_CLIENT_SECRET}`;
+const secret =
+  env.SESSION_SECRET && env.SESSION_SECRET !== "[SENSITIVE]"
+    ? env.SESSION_SECRET
+    : `learntk-session-v1:${env.DISCORD_CLIENT_SECRET}`;
 const key = await crypto.subtle.importKey(
   "raw",
   new TextEncoder().encode(secret),
@@ -25,22 +30,38 @@ const key = await crypto.subtle.importKey(
 );
 
 const b64 = (bytes) =>
-  Buffer.from(bytes).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  Buffer.from(bytes)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 
 const mode = process.argv[2] ?? "member";
 const now = Date.now();
+
+const ownedByMode = {
+  member: ["24b"],
+  both: ["24b", "advanced"],
+  noRole: [],
+};
+
+const courses = ownedByMode[mode] ?? ["24b"];
+const isMember = courses.length > 0;
+
 const payload = {
-  v: 1,
+  v: 2,
   sub: "905931663937253376",
   username: "testlearner",
   displayName: "Test Learner",
   avatar: null,
   email: "test@example.com",
   guildId: "746789586914933",
-  roles: mode === "member" ? ["1059574449025843353"] : [],
-  member: mode === "member",
+  roles: isMember ? ["1059574449025843353"] : [],
+  member: isMember,
   admin: false,
+  courses,
   certificateName: "Test Learner",
+  progress: {},
   iat: now,
   exp: mode === "expired" ? now - 1000 : now + 3600_000,
 };
@@ -53,7 +74,7 @@ if (mode === "tampered") {
   const parts = token.split(".");
   const decoded = JSON.parse(Buffer.from(parts[0], "base64").toString());
   decoded.member = true;
-  decoded.certificateName = "Hacker";
+  decoded.courses = ["24b", "advanced"];
   const forced = b64(new TextEncoder().encode(JSON.stringify(decoded)));
   console.log(`${forced}.${parts[1]}`);
 } else {

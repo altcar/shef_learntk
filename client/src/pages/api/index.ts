@@ -21,8 +21,9 @@ import {
   fetchUser,
   hasAnyRole,
 } from "../../lib/discord";
-import { discordConfig } from "../../lib/config";
+import { discordConfig, courseRoleIds } from "../../lib/config";
 import { accessDeniedUrl, landingPath } from "../../lib/access";
+import { courses } from "../../data/courses";
 import {
   clearStateCookie,
   nonceMatches,
@@ -61,10 +62,20 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     ]);
 
     const roles = member?.roles ?? [];
-    const memberRoleIds = discordConfig.memberRoleIds();
-    const adminRoleIds = discordConfig.adminRoleIds();
-    const admin = hasAnyRole(roles, adminRoleIds);
-    const isMember = admin || hasAnyRole(roles, memberRoleIds);
+    const admin = hasAnyRole(roles, discordConfig.adminRoleIds());
+
+    // Each course has its own Discord role, so entitlement is per course.
+    const ownedCourses = courses
+      .filter((course) => {
+        const required = courseRoleIds(course.slug);
+        return (
+          admin ||
+          (required.length > 0 && required.some((role) => roles.includes(role)))
+        );
+      })
+      .map((course) => course.slug);
+
+    const isMember = ownedCourses.length > 0;
 
     const profile = await getProfile(user.id);
 
@@ -78,6 +89,7 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
       roles,
       member: isMember,
       admin,
+      courses: ownedCourses,
       certificateName: profile?.certificateName ?? null,
       progress: profile?.progress ?? {},
     });
