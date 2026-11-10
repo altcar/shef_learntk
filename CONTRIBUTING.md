@@ -19,6 +19,14 @@ Before pushing:
 npm run build    # astro check + astro build
 ```
 
+If you touch `/buy` or anything containing an embedded checkout, check the print
+layout too — checkout forms are hidden in `@media print`, and a regression there
+is easy to miss:
+
+```bash
+node scripts/print-audit.mjs https://learntk.vercel.app/buy
+```
+
 ## Ground rules for auth changes
 
 - **Never trust a cookie value without verifying its signature.** Use

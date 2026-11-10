@@ -37,20 +37,29 @@ const courses = [
       {
         courses.map((course) => (
           <section class="course-card">
-            <div class="course-info">
-              <h1>{course.title}</h1>
-              <p class="lede">{course.description}</p>
-              <ul class="meta">
-                {course.meta.map((item) => (
-                  <li>{item}</li>
-                ))}
-              </ul>
-            </div>
+            <h1>{course.title}</h1>
+            <p class="lede">{course.description}</p>
+            <ul class="meta">
+              {course.meta.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
 
-            <aside class="course-buy">
+            {/*
+              PayPal's hosted button renders an entire checkout form, not just a
+              button. It has to be given the full content width: its wrapper uses
+              `container-type: inline-size` and collapses to 0px wide when it is
+              a flex/grid item, which forces its narrow layout and makes the
+              form ~2000px tall. Plain block flow avoids that.
+            */}
+            <div class="course-buy">
               <div id={`paypal-container-${course.hostedButtonId}`} class="paypal-slot" />
               <p class="fineprint">Checkout is handled by PayPal.</p>
-            </aside>
+            </div>
+
+            <p class="print-note">
+              Enrol online at <strong>learntk.vercel.app/buy</strong> — checkout is handled by PayPal.
+            </p>
           </section>
         ))
       }
@@ -81,21 +90,13 @@ const courses = [
     }
 
     .course-card {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 2.5rem;
-      align-items: center;
       padding: 2.5rem;
       border: 1px solid rgb(var(--gray-light));
       border-radius: 18px;
       background: #fff;
     }
 
-    .course-info {
-      min-width: 0;
-    }
-
-    .course-info h1 {
+    .course-card h1 {
       margin: 0 0 1rem;
       font-size: 2.2rem;
       line-height: 1.15;
@@ -103,7 +104,7 @@ const courses = [
 
     .lede {
       margin: 0 0 1.5rem;
-      max-width: 62ch;
+      max-width: 68ch;
       font-size: 1.05rem;
       line-height: 1.7;
       color: rgb(var(--gray-dark));
@@ -129,63 +130,107 @@ const courses = [
     }
 
     .course-buy {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-      width: 320px;
-      max-width: 100%;
-      min-width: 0;
-      padding: 1.25rem;
-      border: 1px solid rgb(var(--gray-light));
-      border-radius: 14px;
-      background: #fafafa;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgb(var(--gray-light));
       text-align: center;
     }
 
-    /* Reserve space so the card does not jump while PayPal renders. */
+    /* Must stay a plain block: see the comment in the markup above. */
     .paypal-slot {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: block;
       width: 100%;
       min-height: 72px;
     }
 
-    /* PayPal injects its own iframe, which the scoped styles cannot target. */
+    /* PayPal injects its own iframe, which scoped styles cannot target. */
     .paypal-slot :global(iframe) {
       max-width: 100%;
     }
 
     .fineprint {
-      margin: 0;
+      margin: 0.75rem 0 0;
       font-size: 0.8rem;
       line-height: 1.4;
       color: rgb(var(--gray));
     }
 
-    @media (max-width: 860px) {
+    .print-note {
+      display: none;
+    }
+
+    @media (max-width: 720px) {
       main {
         padding: 2.5rem 0 4rem;
       }
 
       .course-card {
-        grid-template-columns: 1fr;
-        gap: 1.75rem;
         padding: 1.5rem;
       }
 
-      .course-buy {
-        width: 100%;
-        justify-self: stretch;
-      }
-
-      .course-info h1 {
+      .course-card h1 {
         font-size: 1.8rem;
       }
 
       .lede {
         font-size: 1rem;
+      }
+    }
+
+    /*
+     * A checkout form is useless on paper and, with two of them, it turned a
+     * single-page price list into six pages. Print the course details and a
+     * short pointer to the live page instead.
+     */
+    @media print {
+      /* Scoped styles cannot reach the Header/Footer components' elements. */
+      :global(header),
+      :global(footer) {
+        display: none !important;
+      }
+
+      main {
+        display: block;
+        width: auto;
+        max-width: none;
+        padding: 0;
+      }
+
+      .course-card {
+        padding: 0 0 1.5rem;
+        border: 0;
+        border-radius: 0;
+        break-inside: avoid;
+      }
+
+      .course-card + .course-card {
+        padding-top: 1.5rem;
+        border-top: 1px solid #ccc;
+      }
+
+      .course-card h1 {
+        font-size: 20pt;
+      }
+
+      .lede {
+        font-size: 11pt;
+        max-width: none;
+      }
+
+      .meta li {
+        background: transparent;
+        border: 1px solid #999;
+        padding: 0.15rem 0.5rem;
+      }
+
+      .course-buy {
+        display: none !important;
+      }
+
+      .print-note {
+        display: block;
+        margin: 1rem 0 0;
+        font-size: 10pt;
       }
     }
   </style>
