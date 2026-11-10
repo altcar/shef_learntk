@@ -47,17 +47,3 @@ const { title, description, image = '/blog-placeholder-1.jpg' } = Astro.props;
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={new URL(image, Astro.url)} />
-
-<script>
-	document.addEventListener("DOMContentLoaded", () => {
-		window.dispatchEvent(new Event('resize'));
-});
-
-	window.addEventListener("resize", function(event) {
-		var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
-		(width < 502)?	((!window.location.href.includes('mobile'))? window.location.href = window.location.origin+'/mobile': null):null;
-		(width > 502)?	((!window.location.href.includes('mobile'))? null : window.location.href = window.location.origin):null;
-	}
-);
-	
-</script>

@@ -133,7 +133,7 @@ const courses = [
       margin-top: 2rem;
       padding-top: 1.5rem;
       border-top: 1px solid rgb(var(--gray-light));
-      text-align: center;
+      text-align: left;
     }
 
     /* Must stay a plain block: see the comment in the markup above. */
@@ -141,6 +141,33 @@ const courses = [
       display: block;
       width: 100%;
       min-height: 72px;
+    }
+
+    /*
+     * PayPal renders its checkout form into our document (not an iframe), so it
+     * inherits our typography. global.css sizes h1-h6 with large `em` values,
+     * which compounded to a 68px price that wrapped "£19.99 GBP" onto two lines.
+     * Reset headings inside the slot and let PayPal's own sizing apply.
+     */
+    .paypal-slot :global(h1),
+    .paypal-slot :global(h2),
+    .paypal-slot :global(h3),
+    .paypal-slot :global(h4),
+    .paypal-slot :global(h5),
+    .paypal-slot :global(h6) {
+      margin: 0;
+      font-size: inherit;
+      font-weight: inherit;
+      line-height: inherit;
+      color: inherit;
+    }
+
+    /* Keep the price readable now that the heading rule no longer inflates it. */
+    .paypal-slot :global(#price-text),
+    .paypal-slot :global(#discount-price) {
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1.2;
     }
 
     /* PayPal injects its own iframe, which scoped styles cannot target. */
@@ -153,6 +180,7 @@ const courses = [
       font-size: 0.8rem;
       line-height: 1.4;
       color: rgb(var(--gray));
+      text-align: center;
     }
 
     .print-note {

@@ -1,47 +1,125 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE } from "../consts";
+---
 
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead
+      title={`Page not found · ${SITE_TITLE}`}
+      description="That page does not exist."
+    />
+  </head>
+  <body>
+    <Header />
+    <main class="notfound">
+      <p class="code">404</p>
+      <h1>We couldn't find that page</h1>
+      <p class="body">
+        The link may be out of date, or the page may have moved. Here are the
+        two places people usually want.
+      </p>
+      <div class="actions">
+        <a class="btn btn-primary" href="/">Back to the home page</a>
+        <a class="btn btn-secondary" href="/buy">See the courses</a>
+      </div>
+      <p class="hint">
+        Looking for your lessons? <a href="/course">Sign in to your dashboard</a>.
+      </p>
+    </main>
+    <Footer />
+  </body>
 
-<!-- <meta http-equiv="refresh" content="4; URL=''"/>  -->
+  <style>
+    .notfound {
+      width: min(640px, calc(100% - 2rem));
+      max-width: none;
+      margin: 0 auto;
+      padding: 5rem 0 6rem;
+      text-align: center;
+    }
 
-<script>
-      // Your application has indicated there's an error
-      window.setTimeout(function(){
+    .code {
+      margin: 0 0 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgb(var(--gray));
+    }
 
-// Move to a new location or you can do something else
-window.location.href = window.location.origin;
+    h1 {
+      margin: 0 0 1rem;
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      line-height: 1.15;
+    }
 
-}, 5000);
-    </script>
-<h1>404.</h1>
-you have been reached the backside of this page. <br/>
-you will be redirected in <pre style="display: inline-block; margin:0;">5 second</pre><br/><br/>
- 1.  The first thing you need to do is to create a new page. <br/>
- 2.  Then, you need to add a new section. <br/>
- 3.  After that, you need to add a new row. <br/>
- 4.  Then, you need to add a new module. <br/>
- 5.  After that, you need to select the “Blurb” module. <br/>
- 6.  Then, you need to add a new item. <br/>
- 7.  After that, you need to add a new image. <br/>
- 8.  Then, you need to add a new title. <br/>
- 9.  After that, you need to add a new description. <br/>
- 10.  Then, you need to add a new button. <br/>
- 11.  After that, you need to add a new link. <br/>
- 12.  Then, you need to add a new icon. <br/>
- 13.  After that, you need to add a new background. <br/>
- 14.  Then, you need to add a new animation. <br/>
- 15.  After that, you need to add a new custom CSS. <br/>
- 16.  Then, you need to add a new visibility. <br/>
- 17.  After that, you need to add a new custom margin. <br/>
- 18.  Then, you need to add a new custom padding. <br/>
- 19.  After that, you need to add a new border. <br/>
- 20.  Then, you need to add a new box shadow. <br/>
- 21.  After that, you need to add a new transform. <br/>
- 22.  Then, you need to add a new filter. <br/>
- 23.  After that, you need to add a new blend mode. <br/>
- 24.  Then, you need to add a new animation. <br/>
- 25.  After that, you need to add a new transition. <br/>
- 26.  Then, you need to add a new text shadow. <br/>
- 27.  After that, you need to add a new text shadow. <br/>
- 28.  Then, you need to add a new text shadow. <br/>
- 29.  After that, you need to add a new text shadow. <br/>
- 30.  Then, you need to add a new text shadow. <br/>
- 31.  After that, you need to add a new text shadow.<br/>
+    .body {
+      margin: 0 auto 2rem;
+      max-width: 46ch;
+      color: rgb(var(--gray-dark));
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0.65rem 1.25rem;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-primary {
+      background: #111827;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #374151;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      border-color: #d1d5db;
+      color: #111827;
+    }
+
+    .btn-secondary:hover {
+      background: #f3f4f6;
+    }
+
+    .hint {
+      margin: 2.5rem 0 0;
+      font-size: 0.9rem;
+      color: rgb(var(--gray));
+    }
+
+    @media (max-width: 720px) {
+      .notfound {
+        padding: 3rem 0 4rem;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</html>

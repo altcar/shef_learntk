@@ -110,12 +110,34 @@ const MEASURE = `(() => {
   out.slots = [...document.querySelectorAll('.paypal-slot')].map(describe);
   out.forms = [...document.querySelectorAll('[id^=paypal-form-fields-container-][id$=-wrapper]')].map(describe);
   out.printNotes = [...document.querySelectorAll('.print-note')].map(describe);
+  const hdr = document.querySelector('header');
+  if (hdr) {
+    const rect = (el) => {
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { left: Math.round(r.left), right: Math.round(r.right), width: Math.round(r.width), height: Math.round(r.height) };
+    };
+    out.header = {
+      header: rect(hdr),
+      nav: rect(hdr.querySelector('nav')),
+      brand: rect(hdr.querySelector('nav > div')),
+      internal: rect(hdr.querySelector('.internal-links')),
+      state: rect(hdr.querySelector('.state')),
+      stateRight: rect(hdr.querySelector('.stateright')),
+    };
+  }
   out.iframes = [...document.querySelectorAll('iframe')].map(describe);
   out.tallest = [...document.querySelectorAll('body *')]
     .map((el) => ({ el, h: el.getBoundingClientRect().height }))
     .sort((a, b) => b.h - a.h)
     .slice(0, 8)
     .map(({ el, h }) => ({ h: Math.round(h), tag: el.tagName.toLowerCase(), id: el.id || null, cls: (el.className && typeof el.className === 'string') ? el.className.slice(0, 50) : null }));
+  out.widest = [...document.querySelectorAll('body *')]
+    .map((el) => ({ el, w: el.getBoundingClientRect().width, right: el.getBoundingClientRect().right }))
+    .filter(({ w }) => w > 0)
+    .sort((a, b) => b.w - a.w)
+    .slice(0, 6)
+    .map(({ el, w, right }) => ({ w: Math.round(w), right: Math.round(right), tag: el.tagName.toLowerCase(), id: el.id || null, cls: (el.className && typeof el.className === 'string') ? el.className.slice(0, 50) : null }));
   return JSON.stringify(out, null, 2);
 })()`;
 
@@ -133,6 +155,15 @@ try {
 
   await send("Page.enable");
   await send("Runtime.enable");
+  if (process.env.AUDIT_COOKIE) {
+    const [name, ...rest] = process.env.AUDIT_COOKIE.split("=");
+    await send("Network.enable");
+    await send("Network.setCookie", {
+      name,
+      value: rest.join("="),
+      url: URL_TO_TEST,
+    });
+  }
   if (VIEWPORT_WIDTH > 0) {
     await send("Emulation.setDeviceMetricsOverride", {
       width: VIEWPORT_WIDTH,
@@ -146,7 +177,7 @@ try {
   await loaded;
   await sleep(8000); // let PayPal inject its form
 
-  if (VIEWPORT_WIDTH > 0) {
+  if (VIEWPORT_WIDTH > 0 && process.env.AUDIT_NO_OVERRIDE !== "1") {
     try {
       await send("Emulation.setDeviceMetricsOverride", {
         width: VIEWPORT_WIDTH,
@@ -163,6 +194,15 @@ try {
   const screen = await send("Runtime.evaluate", { expression: MEASURE, returnByValue: true });
   console.log("=== SCREEN ===");
   console.log(screen.result.value);
+
+  if (process.env.AUDIT_SHOT) {
+    const shot = await send("Page.captureScreenshot", {
+      format: "png",
+      captureBeyondViewport: true,
+    });
+    fs.writeFileSync(process.env.AUDIT_SHOT, Buffer.from(shot.data, "base64"));
+    console.log(`=== SHOT === ${process.env.AUDIT_SHOT}`);
+  }
 
   await send("Emulation.setEmulatedMedia", { media: "print" });
   await sleep(500);

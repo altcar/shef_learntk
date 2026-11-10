@@ -6,9 +6,30 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import Card from "../components/ProfileCard.astro";
 import { loginUrl } from "../lib/access";
 
-// function called() {
-//   console.log("called");
-// }
+const tutors = [
+  {
+    name: "Shalev",
+    linkedin: "https://www.linkedin.com/in/shalevl",
+    github: "https://github.com/mushroomhater07",
+    email: "mailto:admin@shalev.eu.org",
+    image: "/IMG_2845_edited.webp",
+  },
+  {
+    name: "Nedjm",
+    linkedin: "https://www.linkedin.com/in/nedjm-eddine-laib-48873925b/",
+    image: "/WhatsApp Image 2024-02-20 at 20_52_37_297df171.webp",
+  },
+  {
+    name: "Jivanthika",
+    linkedin: "https://www.linkedin.com/in/jivanthika-venkatakrishnan-24356620a/",
+    image: "/Plant Shadow _edited.webp",
+  },
+  {
+    name: "Haris",
+    linkedin: "https://www.linkedin.com/in/haris-sul",
+    image: "/WhatsApp Image 2024-02-20 at 20_52_59_c2b5c18e.webp",
+  },
+];
 ---
 
 <!doctype html>
@@ -19,79 +40,194 @@ import { loginUrl } from "../lib/access";
   <body>
     <Header />
     <main>
-      <div class="py-[200px] px-0 flex flex-wrap justify-center">
+      <section class="hero">
         <h1>🧑‍🚀 Hello, Coders!</h1>
-        <div class="flex">
-          <a class="flex flex-wrap flex-row justify-center" href="/buy">
-			<span>Join the squad!</span>
-            <button class="hover:bg-gray-300 mx-[20px] my-0 h-[50px] py-3 px-4 text-[1.1rem] font-medium relative min-h-[62px] flex items-center justify-center">
+
+        <div class="cta">
+          <div class="cta-item">
+            <span class="cta-kicker">Join the squad!</span>
+            <a class="btn btn-buy" href="/buy">
               <svg
                 width="24"
                 height="24"
                 viewBox="0 0 24 24"
                 fill="none"
-                class="mr-[10px]"
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z"
-                  stroke="#000000"
+                  stroke="currentColor"
                   stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"></path>
               </svg>
-              Get the course now</button>
+              Get the course now
             </a>
+          </div>
 
-          <!-- <a class="flex flex-wrap flex-row justify-center" href="/api/login" onclick="window.open(this.href,'targetWindow','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=SomeSize,height=SomeSize'); return false;"> -->
-			<a class="flex flex-wrap flex-row justify-center" href={loginUrl('/course')} >
-
-            <span>Already a member?</span>
-            <button 
-              class="mx-[20px] my-0 h-[50px] py-3 px-4 text-[1.1rem] font-medium relative min-h-[62px] flex items-center justify-center"
-              style="--provider-bg: #5865F2; --provider-dark-bg: #5865F2; --provider-color: #fff; --provider-dark-color: #fff; --provider-bg-hover: rgba(88, 101, 242, 0.8); --provider-dark-bg-hover: rgba(88, 101, 242, 0.8);"
-              tabindex="0"
-            >
+          <div class="cta-item">
+            <span class="cta-kicker">Already a member?</span>
+            <a class="btn btn-discord" href={loginUrl("/course")}>
               <img
                 loading="lazy"
                 height="24"
                 width="24"
-                class="w-[25px] block brightness-[2000] mr-[10px]"
                 src="https://authjs.dev/img/providers/discord.svg"
+                alt=""
               />
-              <!-- <img loading="lazy" height="24" width="24" class="hidden" src="https://authjs.dev/img/providers/discord.svg"> -->
-              <span >Sign in with Discord</span></button
-            >
-          </a>
+              Sign in with Discord
+            </a>
+          </div>
         </div>
-      </div>
-      <div class="py-[200px] px-0 flex flex-wrap justify-center">
-        <h1>Your Tutor:</h1>
-        <div class="flex ">
-          <Card 	name="Shalev"   linkedin="https://www.linkedin.com/in/shalevl"  github="https://github.com/mushroomhater07"  email="mailto:admin@shalev.eu.org" image="/IMG_2845_edited.webp" />
-          <Card 	name="Nedjm"   linkedin="https://www.linkedin.com/in/nedjm-eddine-laib-48873925b/"  image="/WhatsApp Image 2024-02-20 at 20_52_37_297df171.webp" />
-          <Card 	name="Jivanthika"   linkedin="https://www.linkedin.com/in/jivanthika-venkatakrishnan-24356620a/"   image="/Plant Shadow _edited.webp" />
-          <Card 	name="Haris"   linkedin="https://www.linkedin.com/in/haris-sul"  image="/WhatsApp Image 2024-02-20 at 20_52_59_c2b5c18e.webp" />
-        </div>
-       </div>
-      </main>
+      </section>
+
+      <section class="tutors">
+        <h2>Your Tutor:</h2>
+        <ul class="cards">
+          {
+            tutors.map((tutor) => (
+              <li>
+                <Card {...tutor} />
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </main>
     <Footer />
-  </body><style>
+  </body>
 
-
-
-    button {
-      color: var(--provider-color, var(--color-primary));
-      background-color: var(--provider-bg);
-      border-color: rgba(0, 0, 0, 0.1);
-      border-radius: var(--border-radius);
-      transition: all 0.1s ease-in-out;
+  <style>
+    main {
+      width: min(1100px, calc(100% - 2rem));
+      max-width: none;
+      margin: 0 auto;
+      padding: 4rem 0 5rem;
     }
 
-    button:hover,
-    a.button:hover {
-      background-color: var(--provider-bg-hover, var(--color-background-hover));
+    .hero {
+      text-align: center;
+      padding: 1rem 0 4rem;
     }
 
+    .hero h1 {
+      margin: 0 0 2.5rem;
+      font-size: clamp(2rem, 5vw, 3.05rem);
+      line-height: 1.15;
+    }
+
+    .cta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2rem;
+    }
+
+    .cta-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .cta-kicker {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgb(var(--gray));
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      min-height: 56px;
+      padding: 0.75rem 1.5rem;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 500;
+      line-height: 1.2;
+      text-align: center;
+      text-decoration: none;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+    }
+
+    .btn-buy {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+      color: #111827;
+    }
+
+    .btn-buy:hover {
+      background: #e5e7eb;
+    }
+
+    .btn-discord {
+      background: #5865f2;
+      color: #fff;
+    }
+
+    .btn-discord:hover {
+      background: #4752c4;
+    }
+
+    .btn-discord img {
+      width: 22px;
+      height: 22px;
+      filter: brightness(0) invert(1);
+    }
+
+    .tutors {
+      text-align: center;
+    }
+
+    .tutors h2 {
+      margin: 0 0 2rem;
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+    }
+
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.25rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    @media (max-width: 720px) {
+      main {
+        padding: 2rem 0 3rem;
+      }
+
+      .hero {
+        padding: 0 0 2.5rem;
+      }
+
+      .hero h1 {
+        margin-bottom: 1.75rem;
+      }
+
+      .cta {
+        gap: 1.25rem;
+      }
+
+      .cta-item {
+        width: 100%;
+      }
+
+      .btn {
+        width: 100%;
+        font-size: 1rem;
+      }
+    }
   </style>
 </html>

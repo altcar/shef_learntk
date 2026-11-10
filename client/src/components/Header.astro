@@ -60,6 +60,7 @@ const signInHref = loginUrl(`${Astro.url.pathname}${Astro.url.search}`);
 	h2 {
 		margin: 0;
 		font-size: 1em;
+		white-space: nowrap;
 	}
 
 	h2 a,
@@ -70,13 +71,19 @@ const signInHref = loginUrl(`${Astro.url.pathname}${Astro.url.search}`);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		gap: 0.5rem;
+		flex-wrap: wrap;
 	}
 	nav a {
 		padding: 1em 0.5em;
 		color: var(--black);
 		border-bottom: 4px solid transparent;
 		text-decoration: none;
-		
+	}
+	.internal-links {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
 	}
 	.internal-links a {
 		transition: 0.5s;
@@ -94,27 +101,67 @@ const signInHref = loginUrl(`${Astro.url.pathname}${Astro.url.search}`);
 	.social-links a {
 		display: flex;
 	}
+	.state {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		min-width: 0;
+	}
+	.stateright {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		min-width: 0;
+	}
+	.stateright a {
+		white-space: nowrap;
+	}
+	.state img {
+		margin-right: 20px;
+		width: 40px !important;
+		height: 40px !important;
+		flex: 0 0 auto;
+	}
+	.state * {
+		padding: 0;
+	}
+	.btm123 {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 0.75rem;
+	}
+
+	/* Narrow screens: brand and account on the first row, links on their own row. */
 	@media (max-width: 720px) {
-		.social-links {
-			display: none;
+		header {
+			padding: 0.25rem 0.75rem;
+		}
+		h2 {
+			font-size: 0.95em;
+		}
+		nav a {
+			padding: 0.6rem 0.5rem;
+			font-size: 0.95rem;
+		}
+		.internal-links {
+			order: 3;
+			flex-basis: 100%;
+			justify-content: flex-start;
+			margin-top: 0.15rem;
+			border-top: 1px solid rgb(var(--gray-light));
+		}
+		.internal-links a {
+			padding: 0.6rem 0.5rem;
+		}
+		.state img {
+			margin-right: 0.6rem;
+			width: 32px !important;
+			height: 32px !important;
+		}
+		.stateright {
+			font-size: 0.85rem;
+			line-height: 1.35;
 		}
 	}
-	.state {
-    display: flex;
-    flex-direction: row;
-	align-items: center;
-}
-.stateright {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-}
-.state img {
-	margin-right: 20px;
-	width: 40px !important;
-	height: 40px !important;
-}
-.state *{
-	padding: 0;
-}
 </style>
