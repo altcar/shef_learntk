@@ -179,6 +179,24 @@ If you change the callback path, update **both** `DISCORD_REDIRECT_URI` and the
 Discord developer portal, or the token exchange will fail with
 `invalid_grant`.
 
+### Behind a proxy: `security.allowedDomains`
+
+`astro.config.mjs` sets `security.allowedDomains` to the site hostname, the
+`**.vercel.app` wildcard (preview deployments) and `localhost`.
+
+This is not optional. Astro only trusts the `Host` / `X-Forwarded-*` headers for
+domains listed there; with the default empty list the request URL becomes
+`https://localhost`, so `Astro.url.origin` is wrong and Astro's built-in CSRF
+check rejects every same-origin form POST with:
+
+```
+Cross-site POST form submissions are forbidden
+```
+
+If you deploy on a different domain, either set `SITE_URL` (the list is derived
+from it) or add your hostname to `allowedDomains()` in `astro.config.mjs`.
+
+
 ---
 
 ## Teachable parity
