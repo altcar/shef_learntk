@@ -12,8 +12,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "deploy": "vercel deploy --prod",
-    "deploy:preview": "vercel deploy",
-    "cf-typegen": "wrangler types"
+    "deploy:preview": "vercel deploy"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.12",
