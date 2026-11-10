@@ -1,47 +1,40 @@
 ---
 import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
-import { registerUser} from "./api/usefb";
+import { setSessionCookie } from "../lib/session";
+import { saveProfile } from "../lib/store";
 
-var detail;
-var new1 = true;
-console.log(Astro.cookies.has("discord"));
-if (Astro.cookies.get("discord")?.value ?? false) {
-  detail = JSON.parse(Astro.cookies.get("discord")?.value ?? "{}");
-  if (detail.subscribed) {
-    const discordValue = JSON.parse(Astro.cookies.get("discord")?.value ?? "{}");
-    if (discordValue.certificate_name != undefined) {new1=false}
-  } else {
-    return Astro.redirect("/404");
-  }
-}else{return Astro.redirect("/404");}
+// The middleware guarantees a signed-in member reaches this page.
+const session = Astro.locals.session;
+if (!session) {
+  return Astro.redirect("/access-denied?reason=not_signed_in&next=/welcome", 302);
+}
 
-// var dcemail = await discord_data(detail.discord_email);
-const errors = { printedname: "", email: "", password: "" };
+const currentName = session.certificateName ?? session.displayName;
+let error = "";
+
 if (Astro.request.method === "POST") {
-  try {
-    const data = await Astro.request.formData();
-    const name = data.get("name");
-    const email = data.get("email");
-    const password = data.get("password");
-    var pattern = /^\b[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b$/i
-    if(typeof name !== "string" || name == null ){
-      errors.printedname += "Please enter a name for Certificate. ";
-    } else if(name.length < 4  ){
-      errors.printedname += "Please enter a name for Certificate. ";
+  const data = await Astro.request.formData().catch(() => null);
+  const name = String(data?.get("name") ?? "").trim();
+
+  if (name.length < 3) {
+    error = "Please enter the full name you would like printed on your certificate.";
+  } else if (name.length > 80) {
+    error = "That name is too long. Please use 80 characters or fewer.";
+  } else {
+    const saved = await saveProfile(session.sub, { certificateName: name });
+    if (!saved) {
+      // Persisting failed, but the signed cookie still carries the name for
+      // this session, so the learner is not blocked.
+      console.warn("[onboarding] could not persist certificate name");
     }
-    if(typeof email !== "string" || !pattern.test(email)){
-      errors.email += "Please enter a valid email. ";
-    }
-    const hasErrors = Object.values(errors).some((msg) => msg);
-    if (!hasErrors) {
-      await registerUser([{ name, email}, detail.discord_id]);
-      return Astro.redirect("/course");
-    }
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error(error.message);
-    }
+    await setSessionCookie(
+      Astro.cookies,
+      { ...session, certificateName: name },
+      { url: new URL(Astro.request.url) },
+    );
+    return Astro.redirect("/course", 302);
   }
 }
 ---
@@ -49,108 +42,54 @@ if (Astro.request.method === "POST") {
 <!doctype html>
 <html lang="en">
   <head>
-    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-    <!-- <script is:inline src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-         <script is:inline>
-      </script> -->
+    <BaseHead title={`Welcome · ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
   </head>
   <body>
-    <div class="login-box">
-      <form method="POST">
-        <h2>Welcome Onboard</h2>
-        <div class="user-box">
-          <input type="text" name="name" required value={(new1)? detail?.certificate_name ?? "": ""}/>
-          <label>Name on Certificate</label>
-          
+    <Header />
+    <main class="mx-auto max-w-xl px-6 py-24">
+      <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-gray-500">One quick step</p>
+      <h1 class="mb-3 text-4xl font-bold">Let's set up your certificate</h1>
+      <p class="mb-8 text-gray-600">
+        Tell us the name to print on your certificate of completion. You can change it later.
+      </p>
+
+      <form method="POST" class="space-y-6 rounded-2xl border border-gray-200 p-6 shadow-sm">
+        <div>
+          <label class="mb-2 block text-sm font-medium" for="name">Name on certificate</label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            minlength="3"
+            maxlength="80"
+            value={currentName}
+            class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-gray-900 focus:outline-none"
+          />
         </div>
-        <div class="user-box">
-          <input type="text" name="email" required value={detail?.discord_email ?? ""} />
-          <label>Is this email you wish to communicate with?</label>
-          
+
+        <div>
+          <p class="text-sm font-medium">Contact email</p>
+          <p class="text-sm text-gray-600">
+            {session.email ?? "Your Discord account has no verified email address."}
+          </p>
+          <p class="mt-1 text-xs text-gray-500">Taken from Discord, so there is nothing extra to type.</p>
         </div>
-        <button type="submit">submit</button>
-        {errors.printedname && <p>{errors.printedname}</p>}
-        {errors.email && <p>{errors.email}</p>}
+
+        {error && <p class="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+
+        <button
+          type="submit"
+          class="w-full rounded-lg bg-gray-900 px-5 py-3 font-medium text-white transition hover:bg-gray-700"
+        >
+          Save and continue
+        </button>
       </form>
-    </div>
-  </body><style>
-    html {
-      height: 100%;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-      background: linear-gradient(200deg, #f4feff, #f4fb55);
-    }
 
-    .login-box {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 400px;
-      padding: 40px;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.5);
-      box-sizing: border-box;
-      box-shadow: 0 15px 25px rgba(0, 0, 0, 0.6);
-      border-radius: 10px;
-    }
-
-    .login-box h2 {
-      margin: 0 0 30px;
-      padding: 0;
-      color: #fff;
-      text-align: center;
-    }
-
-    .login-box .user-box {
-      position: relative;
-    }
-
-    .login-box .user-box input {
-      width: 100%;
-      padding: 10px 0;
-      font-size: 16px;
-      color: #fff;
-      margin-bottom: 30px;
-      border: none;
-      border-bottom: 1px solid #fff;
-      outline: none;
-      background: transparent;
-    }
-    .login-box .user-box label {
-      position: absolute;
-      top: 0;
-      left: 0;
-      padding: 10px 0;
-      font-size: 16px;
-      color: #fff;
-      pointer-events: none;
-      transition: 0.5s;
-    }
-
-    .login-box .user-box input:focus ~ label,
-    .login-box .user-box input:valid ~ label {
-      top: -20px;
-      left: 0;
-      color: #03e9f4;
-      font-size: 12px;
-    }
-
-    .login-box form a {
-      position: relative;
-      display: block;
-      padding: 10px 20px;
-      color: #03e9f4;
-      font-size: 16px;
-      text-decoration: none;
-      text-transform: uppercase;
-      overflow: hidden;
-      transition: 0.5s;
-      margin-top: 40px;
-      letter-spacing: 4px;
-      text-align: center;
-    }
-  </style>
+      <p class="mt-6 text-sm text-gray-500">
+        Signed in as <strong>{session.displayName}</strong> ·
+        <a class="underline" href="/api/logout">Use a different account</a>
+      </p>
+    </main>
+  </body>
 </html>

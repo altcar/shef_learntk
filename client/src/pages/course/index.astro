@@ -3,123 +3,172 @@ import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
-import { getCollection } from 'astro:content';
-// import FormattedDate from '../../components/FormattedDate.astro';
+import { courses, completedInCourse, lessonCount } from '../../data/courses';
 
-// var detail = (Astro.cookies.get("discord")?.value ?? "")? JSON.parse(detail): {subscribed: false};
+// The middleware guarantees an authenticated, entitled member here.
+const session = Astro.locals.session;
+const user = Astro.locals.user;
 
-if (Astro.cookies.get("discord")?.value != undefined) {
-  var detail = JSON.parse(Astro.cookies.get("discord")?.value ?? "{}");
-  if (detail.subscribed) {
-  } else {
-    return Astro.redirect("/404");
-  }
-}else{return Astro.redirect("/404");}
+if (!session || !user) {
+  return Astro.redirect('/access-denied?reason=not_signed_in&next=/course', 302);
+}
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
-);
+const progress = session.progress ?? {};
+
+const summaries = courses.map((course) => {
+  const total = lessonCount(course);
+  const completed = completedInCourse(course, progress);
+  const nextLesson =
+    course.weeks
+      .flatMap((week) => week.lessons)
+      .find((lesson) => progress[lesson.id] !== 'done') ?? null;
+
+  return {
+    course,
+    total,
+    completed,
+    percent: total === 0 ? 0 : Math.round((completed / total) * 100),
+    nextLesson,
+  };
+});
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:nth-child(2){
-				opacity: 0.5;
-			}
-			ul li:first-child , ul li:nth-child(2){
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child , ul li:nth-child(2){
-				width: 100%;
-			}
-			ul li:first-child .title , ul li:nth-child(2) .title{
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			<section>
-				<ul>
-					<li>
-						<a href={`/24b`}>
-							<img width={720} height={360} src="/blog-placeholder-5.jpg" alt="" />
-							<h4 class="title">Beginner course</h4>
-							
-						</a>
-					</li>
-					<li>
-						<a href={`/course/advanced/`}>
-							<img width={720} height={360} src="/blog-placeholder-5.jpg" alt="" />
-							<h4 class="title">Advanced Course</h4>
-							
-						</a>
-					</li>
-				</ul>
-			</section>
-		</main>
-		<Footer />
-	</body>
+  <head>
+    <BaseHead title={`My courses · ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+  </head>
+  <body>
+    <Header />
+    <main class="mx-auto max-w-5xl px-6 py-16">
+      <header class="mb-12 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-gray-500">Dashboard</p>
+          <h1 class="text-4xl font-bold">Welcome back, {user.certificateName ?? user.displayName}</h1>
+          <p class="mt-2 text-gray-600">
+            {user.admin ? 'Instructor access · ' : ''}Signed in with Discord as {user.username}
+          </p>
+        </div>
+        <a class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100" href="/api/session">
+          Session JSON
+        </a>
+      </header>
+
+      <div class="grid gap-8 md:grid-cols-2">
+        {
+          summaries.map(({ course, total, completed, percent, nextLesson }) => (
+            <section class="rounded-2xl border border-gray-200 p-6 shadow-sm">
+              <div class="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
+                <span>{course.level}</span>
+                {course.status === 'preview' && <span class="rounded bg-gray-200 px-2 py-0.5">Coming soon</span>}
+              </div>
+              <h2 class="text-2xl font-bold">{course.title}</h2>
+              <p class="mt-2 text-gray-600">{course.tagline}</p>
+
+              {total > 0 && (
+                <div class="mt-6">
+                  <div class="mb-2 flex items-center justify-between text-sm text-gray-600">
+                    <span data-progress-label>{completed} of {total} weeks complete</span>
+                    <span data-progress-percent>{percent}%</span>
+                  </div>
+                  <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      class="h-full rounded-full bg-green-500 transition-all"
+                      data-progress-bar
+                      style={`width:${percent}%`}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div class="mt-6 flex flex-wrap gap-3">
+                {course.status === 'live' && nextLesson ? (
+                  <a class="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white hover:bg-gray-700" href={nextLesson.href}>
+                    {completed === 0 ? 'Start course' : 'Continue'}
+                  </a>
+                ) : (
+                  <a class="rounded-lg bg-gray-900 px-4 py-2 font-medium text-white hover:bg-gray-700" href={course.startHref}>
+                    View course
+                  </a>
+                )}
+                {course.slug === '24b' && (
+                  <a class="rounded-lg border border-gray-300 px-4 py-2 font-medium hover:bg-gray-100" href="/24b">
+                    Curriculum index
+                  </a>
+                )}
+              </div>
+
+              {course.weeks.length > 0 && (
+                <ul class="mt-6 space-y-2 border-t border-gray-100 pt-4" data-course={course.slug}>
+                  {course.weeks.map((week) => (
+                    <li class="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4 rounded border-gray-300"
+                        data-lesson={week.lessons[0]?.id}
+                        checked={week.lessons[0] ? progress[week.lessons[0].id] === 'done' : false}
+                      />
+                      <a class="text-sm hover:underline" href={week.lessons[0]?.href ?? '#'}>{week.title}</a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ))
+        }
+      </div>
+
+      {user.certificateName && (
+        <section class="mt-12 rounded-2xl border border-gray-200 p-6">
+          <h2 class="text-xl font-bold">Certificate</h2>
+          <p class="mt-2 text-gray-600">
+            Your certificate will be issued in the name <strong>{user.certificateName}</strong>.
+            <a class="ml-2 underline" href="/welcome">Change it</a>
+          </p>
+        </section>
+      )}
+    </main>
+    <Footer />
+
+    <script>
+      const checkboxes = document.querySelectorAll<HTMLInputElement>('[data-lesson]');
+
+      function refresh() {
+        for (const section of document.querySelectorAll<HTMLElement>('[data-course]')) {
+          const boxes = section.querySelectorAll<HTMLInputElement>('[data-lesson]');
+          const done = [...boxes].filter((box) => box.checked).length;
+          const card = section.closest('section');
+          if (!card) continue;
+          const percent = boxes.length === 0 ? 0 : Math.round((done / boxes.length) * 100);
+          const label = card.querySelector('[data-progress-label]');
+          const percentLabel = card.querySelector('[data-progress-percent]');
+          const bar = card.querySelector<HTMLElement>('[data-progress-bar]');
+          if (label) label.textContent = `${done} of ${boxes.length} weeks complete`;
+          if (percentLabel) percentLabel.textContent = `${percent}%`;
+          if (bar) bar.style.width = `${percent}%`;
+        }
+      }
+
+      for (const box of checkboxes) {
+        box.addEventListener('change', async () => {
+          const lessonId = box.dataset.lesson;
+          if (!lessonId) return;
+          box.disabled = true;
+          try {
+            const response = await fetch('/api/progress', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lessonId, done: box.checked }),
+            });
+            if (!response.ok) box.checked = !box.checked;
+          } catch {
+            box.checked = !box.checked;
+          } finally {
+            box.disabled = false;
+            refresh();
+          }
+        });
+      }
+    </script>
+  </body>
 </html>

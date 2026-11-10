@@ -28,8 +28,8 @@ This week we will learn about extra python datatypes (list, tuple, set)
 
 ## Lesson pdf
 
-<object data="/Lesson/Lesson4.pdf" type="application/pdf" width="100%" height="500px">
-    <p>Unable to display PDF file. <a href="/Lesson/Lesson4.pdf">Download</a> instead.</p>
+<object data="/api/lessons/Lesson4.pdf" type="application/pdf" width="100%" height="500px">
+    <p>Unable to display PDF file. <a href="/api/lessons/Lesson4.pdf">Download</a> instead.</p>
 </object>
 
 

@@ -1,0 +1,123 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE } from "../consts";
+import { discordInviteUrl, discordConfig } from "../lib/config";
+import { loginUrl, safeNext } from "../lib/access";
+
+const url = new URL(Astro.request.url);
+const reason = url.searchParams.get("reason") ?? "not_signed_in";
+const next = safeNext(url.searchParams.get("next"));
+const session = Astro.locals.session;
+
+const copy: Record<string, { title: string; body: string; hint?: string }> = {
+  not_signed_in: {
+    title: "Please sign in",
+    body: "This part of the course is for enrolled members. Sign in with Discord to continue.",
+  },
+  not_in_guild: {
+    title: "You are not in the community server yet",
+    body: "Course access is granted through a role in our Discord server. Join the server, then sign in again.",
+    hint: "Already joined? Make sure you accepted the invite with the same Discord account you are signing in with.",
+  },
+  missing_role: {
+    title: "Your account does not have the course role yet",
+    body: "We found your Discord account, but it is missing the role that unlocks the course.",
+    hint: "If you just purchased the course, roles are usually applied within a few minutes. Sign in again after the role appears.",
+  },
+  oauth_denied: {
+    title: "Discord authorisation was cancelled",
+    body: "You closed the Discord prompt before approving access. Nothing was changed.",
+  },
+  oauth_failed: {
+    title: "We could not finish signing you in",
+    body: "Discord returned an error while we were exchanging your login. This is usually temporary.",
+  },
+  state_mismatch: {
+    title: "That login link expired",
+    body: "The sign-in attempt took too long or was started in a different browser. Please start again.",
+  },
+  session_expired: {
+    title: "Your session expired",
+    body: "Sign in again to pick up where you left off.",
+  },
+};
+
+const detail = copy[reason] ?? copy.not_signed_in;
+const retryHref = loginUrl(next);
+const invite = discordInviteUrl();
+const guildName = Astro.locals.session?.guildId ?? discordConfig.guildId();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={`${detail.title} · ${SITE_TITLE}`} description={detail.body} />
+  </head>
+  <body>
+    <Header />
+    <main class="mx-auto max-w-2xl px-6 py-24">
+      <p class="mb-3 text-sm font-semibold uppercase tracking-widest text-gray-500">
+        Access check
+      </p>
+      <h1 class="mb-4 text-4xl font-bold">{detail.title}</h1>
+      <p class="mb-6 text-lg text-gray-700">{detail.body}</p>
+
+      {detail.hint && (
+        <p class="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900">
+          {detail.hint}
+        </p>
+      )}
+
+      {
+        session && !session.member && (
+          <div class="mb-8 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+            <p class="mb-2 font-semibold">Signed in as {session.displayName}</p>
+            <p class="mb-1">
+              Discord ID: <code>{session.sub}</code>
+            </p>
+            <p class="mb-1">
+              Roles found: {session.roles.length > 0 ? session.roles.join(", ") : "none"}
+            </p>
+            <p>
+              Server checked: <code>{guildName}</code>
+            </p>
+          </div>
+        )
+      }
+
+      <div class="flex flex-wrap gap-3">
+        <a
+          class="rounded-lg bg-[#5865F2] px-5 py-3 font-medium text-white transition hover:bg-[#4752c4]"
+          href={retryHref}
+        >
+          Sign in with Discord
+        </a>
+        {!session?.member && (
+          <a
+            class="rounded-lg border border-gray-300 px-5 py-3 font-medium transition hover:bg-gray-100"
+            href={invite}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Join the community server
+          </a>
+        )}
+        <a
+          class="rounded-lg border border-gray-300 px-5 py-3 font-medium transition hover:bg-gray-100"
+          href="/buy"
+        >
+          Get the course
+        </a>
+      </div>
+
+      <p class="mt-10 text-sm text-gray-500">
+        Still stuck? Email
+        <a class="underline" href="mailto:admin@shalev.eu.org">admin@shalev.eu.org</a>
+        with your Discord username and we will sort it out.
+      </p>
+    </main>
+    <Footer />
+  </body>
+</html>

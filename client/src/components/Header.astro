@@ -2,16 +2,13 @@
 import HeaderLink from './HeaderLink.astro';
 import { SITE_TITLE } from '../consts';
 import { Image } from 'astro:assets';
+import { loginUrl } from '../lib/access';
 
-const { logged = "false" } = Astro.props;
-var login = false;
-var cookie1 = Astro.cookies.get("discord")
-var JSONcookie;
-if(cookie1 != undefined){
-	JSONcookie = JSON.parse(cookie1.value);
-	login = true;
-}
-// var JSONcookie = undefined;
+const session = Astro.locals.session;
+const user = Astro.locals.user;
+const avatar = user?.avatar ?? '/default-avatar.svg';
+const needsOnboarding = Boolean(session) && !session?.certificateName;
+const signInHref = loginUrl(`${Astro.url.pathname}${Astro.url.search}`);
 ---
 
 <header>
@@ -24,57 +21,33 @@ if(cookie1 != undefined){
 			<HeaderLink href="/">Home</HeaderLink>
 			<HeaderLink href="/buy">Purchase</HeaderLink>
 			<HeaderLink href="/about">About</HeaderLink>
+			{user && <HeaderLink href="/course">My courses</HeaderLink>}
 		</div>
 		<div class="state">
-			<img src={(JSONcookie != undefined) ? JSONcookie.discord_avatar:"https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.worldfuturecouncil.org%2Fwp-content%2Fuploads%2F2020%2F06%2Fblank-profile-picture-973460_1280-1-705x705.png&f=1&nofb=1&ipt=90c01c62e032c1dea2338dd33dfa491d732e3ec1de41cf35a092d7ba35eabacb&ipo=images"} alt="" >
-			<div class="stateright">
-				<div class="top123">{(JSONcookie != undefined) ? ((JSONcookie.certificate_name != undefined) ? <a href="/welcome">Welcome back, {JSONcookie.certificate_name}</a>: <a href="/welcome">Inital Setup required</a>):<a href="/api/login">Please sign in</a>}</div>
-				<div class="btm123">{(JSONcookie != undefined) ?<a href="/course">Go to course</a>:<a href="/"></a>}
-				{(JSONcookie != undefined) ?<a href="/api/logout">Logout</a>:<a href="/api/login">w Discord</a>}
-				</div>		
-			</div>
+			{
+				user ? (
+					<>
+						<img src={avatar} alt="" width="40" height="40" referrerpolicy="no-referrer" />
+						<div class="stateright">
+							<div class="top123">
+								<a href="/welcome">
+									{needsOnboarding ? 'Finish your setup' : `Hi, ${session?.certificateName ?? user.displayName}`}
+								</a>
+							</div>
+							<div class="btm123">
+								<a href="/course">My courses</a>
+								<a href="/api/logout">Log out</a>
+							</div>
+						</div>
+					</>
+				) : (
+					<div class="stateright">
+						<div class="top123"><a href={signInHref}>Please sign in</a></div>
+						<div class="btm123"><a href={signInHref}>with Discord</a></div>
+					</div>
+				)
+			}
 		</div>
-		<script>
-			
-		</script>
-		<!--<div class="social-links">
-			 <a href="https://m.webtoo.ls/@astro" target="_blank">
-				<span class="sr-only">Follow Astro on Mastodon</span>
-				<svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32"
-					><path
-						fill="currentColor"
-						d="M11.19 12.195c2.016-.24 3.77-1.475 3.99-2.603.348-1.778.32-4.339.32-4.339 0-3.47-2.286-4.488-2.286-4.488C12.062.238 10.083.017 8.027 0h-.05C5.92.017 3.942.238 2.79.765c0 0-2.285 1.017-2.285 4.488l-.002.662c-.004.64-.007 1.35.011 2.091.083 3.394.626 6.74 3.78 7.57 1.454.383 2.703.463 3.709.408 1.823-.1 2.847-.647 2.847-.647l-.06-1.317s-1.303.41-2.767.36c-1.45-.05-2.98-.156-3.215-1.928a3.614 3.614 0 0 1-.033-.496s1.424.346 3.228.428c1.103.05 2.137-.064 3.188-.189zm1.613-2.47H11.13v-4.08c0-.859-.364-1.295-1.091-1.295-.804 0-1.207.517-1.207 1.541v2.233H7.168V5.89c0-1.024-.403-1.541-1.207-1.541-.727 0-1.091.436-1.091 1.296v4.079H3.197V5.522c0-.859.22-1.541.66-2.046.456-.505 1.052-.764 1.793-.764.856 0 1.504.328 1.933.983L8 4.39l.417-.695c.429-.655 1.077-.983 1.934-.983.74 0 1.336.259 1.791.764.442.505.661 1.187.661 2.046v4.203z"
-					></path></svg
-				>
-			</a> 
-			<a href="https://github.com/withastro/astro" target="_blank">
-				<span class="sr-only">Go to Astro's GitHub repo</span>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="meteor-icon-kit__solid-linkedin" width="32" height="32">
-				<path fill-rule="evenodd" fill="currentColor"  clip-rule="evenodd" d="M22.2857 0H1.70893C0.766071 0 0 0.776786 0 1.73036V22.2696C0 23.2232 0.766071 24 1.70893 24H22.2857C23.2286 24 24 23.2232 24 22.2696V1.73036C24 0.776786 23.2286 0 22.2857 0ZM7.25357 20.5714H3.69643V9.11786H7.25893V20.5714H7.25357ZM5.475 7.55357C4.33393 7.55357 3.4125 6.62679 3.4125 5.49107C3.4125 4.35536 4.33393 3.42857 5.475 3.42857C6.61071 3.42857 7.5375 4.35536 7.5375 5.49107C7.5375 6.63214 6.61607 7.55357 5.475 7.55357ZM20.5875 20.5714H17.0304V15C17.0304 13.6714 17.0036 11.9625 15.1821 11.9625C13.3286 11.9625 13.0446 13.4089 13.0446 14.9036V20.5714H9.4875V9.11786H12.9V10.6821H12.9482C13.425 9.78214 14.5875 8.83393 16.3179 8.83393C19.9179 8.83393 20.5875 11.2071 20.5875 14.2929V20.5714Z" fill="#758CA3"/>
-				</svg>
-			</a>
-			<a href="https://github.com/withastro/astro" target="_blank">
-				<span class="sr-only">Go to Astro's GitHub repo</span>
-			<svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" fill="#0F0F0F"/>
-				<path fill="currentColor" d="M18 5C17.4477 5 17 5.44772 17 6C17 6.55228 17.4477 7 18 7C18.5523 7 19 6.55228 19 6C19 5.44772 18.5523 5 18 5Z" fill="#0F0F0F"/>
-				<path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M1.65396 4.27606C1 5.55953 1 7.23969 1 10.6V13.4C1 16.7603 1 18.4405 1.65396 19.7239C2.2292 20.8529 3.14708 21.7708 4.27606 22.346C5.55953 23 7.23969 23 10.6 23H13.4C16.7603 23 18.4405 23 19.7239 22.346C20.8529 21.7708 21.7708 20.8529 22.346 19.7239C23 18.4405 23 16.7603 23 13.4V10.6C23 7.23969 23 5.55953 22.346 4.27606C21.7708 3.14708 20.8529 2.2292 19.7239 1.65396C18.4405 1 16.7603 1 13.4 1H10.6C7.23969 1 5.55953 1 4.27606 1.65396C3.14708 2.2292 2.2292 3.14708 1.65396 4.27606ZM13.4 3H10.6C8.88684 3 7.72225 3.00156 6.82208 3.0751C5.94524 3.14674 5.49684 3.27659 5.18404 3.43597C4.43139 3.81947 3.81947 4.43139 3.43597 5.18404C3.27659 5.49684 3.14674 5.94524 3.0751 6.82208C3.00156 7.72225 3 8.88684 3 10.6V13.4C3 15.1132 3.00156 16.2777 3.0751 17.1779C3.14674 18.0548 3.27659 18.5032 3.43597 18.816C3.81947 19.5686 4.43139 20.1805 5.18404 20.564C5.49684 20.7234 5.94524 20.8533 6.82208 20.9249C7.72225 20.9984 8.88684 21 10.6 21H13.4C15.1132 21 16.2777 20.9984 17.1779 20.9249C18.0548 20.8533 18.5032 20.7234 18.816 20.564C19.5686 20.1805 20.1805 19.5686 20.564 18.816C20.7234 18.5032 20.8533 18.0548 20.9249 17.1779C20.9984 16.2777 21 15.1132 21 13.4V10.6C21 8.88684 20.9984 7.72225 20.9249 6.82208C20.8533 5.94524 20.7234 5.49684 20.564 5.18404C20.1805 4.43139 19.5686 3.81947 18.816 3.43597C18.5032 3.27659 18.0548 3.14674 17.1779 3.0751C16.2777 3.00156 15.1132 3 13.4 3Z" fill="#0F0F0F"/>
-				</svg>
-				</a>
-			<a href="https://twitter.com/astrodotbuild" target="_blank">
-				<span class="sr-only">Follow Astro on Twitter</span>
-				<svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32"
-					><path
-						fill="currentColor"
-						d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"
-					></path></svg
-				>
-			</a>
-			<!-- <a href="https://github.com/withastro/astro" target="_blank">
-				<span class="sr-only">Go to Astro's GitHub repo</span>
-				
-			</a>
-		</div> -->
 	</nav>
 </header>
 <style>

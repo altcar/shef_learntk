@@ -6,15 +6,11 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../../../consts';
 import { getCollection } from 'astro:content';
 import FormattedDate from '../../../components/FormattedDate.astro';
 
-// var detail = (Astro.cookies.get("discord")?.value ?? "")? JSON.parse(detail): {subscribed: false};
-
-if (Astro.cookies.get("discord")?.value != undefined) {
-  var detail = JSON.parse(Astro.cookies.get("discord")?.value ?? "{}");
-  if (detail.subscribed) {
-  } else {
-    return Astro.redirect("/404");
-  }
-}else{return Astro.redirect("/404");}
+// The middleware already enforced membership for `/course/*`.
+const session = Astro.locals.session;
+if (!session?.member) {
+  return Astro.redirect("/access-denied?reason=not_signed_in&next=/course/dump", 302);
+}
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
@@ -106,7 +102,7 @@ const posts = (await getCollection('blog')).sort(
 					{
 						posts.map((post) => (
 							<li>
-								<a href={`/course/${post.slug}/`}>
+								<a href={`/course/${post.id}/`}>
 									<img width={720} height={360} src={post.data.heroImage} alt="" />
 									<h4 class="title">{post.data.title}</h4>
 									<p class="date">

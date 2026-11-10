@@ -16,7 +16,12 @@ client/pnpm-debug.log*
 
 # environment variables
 client/.env
+client/.env.*
+!client/.env.example
 client/.env.production
+.env.local
+.env
+.vercel/
 
 # macOS-specific files
 client/.DS_Store
@@ -31,3 +36,5 @@ client/.dev.vars
 server/.env
 server/learntk-firebase-adminsdk-m5nol-af3788623c.json
 
+.vercel
+.env*

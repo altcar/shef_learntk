@@ -28,8 +28,8 @@ This week we will learn about basic python syntax and usage
 
 ## Lesson pdf
 
-<object data="/Lesson/Lesson0.pdf" type="application/pdf" width="100%" height="500px">
-    <p>Unable to display PDF file. <a href="/Lesson/Lesson0.pdf">Download</a> instead.</p>
+<object data="/api/lessons/Lesson0.pdf" type="application/pdf" width="100%" height="500px">
+    <p>Unable to display PDF file. <a href="/api/lessons/Lesson0.pdf">Download</a> instead.</p>
 </object>
 
 ## YouTube recording

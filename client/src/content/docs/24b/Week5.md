@@ -31,8 +31,8 @@ This week we will learn about function and dictionary
 
 ## Lesson pdf
 
-<object data="/Lesson/Lesson5.pdf" type="application/pdf" width="100%" height="500px">
-    <p>Unable to display PDF file. <a href="/Lesson/Lesson5.pdf">Download</a> instead.</p>
+<object data="/api/lessons/Lesson5.pdf" type="application/pdf" width="100%" height="500px">
+    <p>Unable to display PDF file. <a href="/api/lessons/Lesson5.pdf">Download</a> instead.</p>
 </object>
 
 

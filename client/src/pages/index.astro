@@ -4,6 +4,7 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import Card from "../components/ProfileCard.astro";
+import { loginUrl } from "../lib/access";
 
 // function called() {
 //   console.log("called");
@@ -43,7 +44,7 @@ import Card from "../components/ProfileCard.astro";
             </a>
 
           <!-- <a class="flex flex-wrap flex-row justify-center" href="/api/login" onclick="window.open(this.href,'targetWindow','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=SomeSize,height=SomeSize'); return false;"> -->
-			<a class="flex flex-wrap flex-row justify-center" href="/api/login" >
+			<a class="flex flex-wrap flex-row justify-center" href={loginUrl('/course')} >
 
             <span>Already a member?</span>
             <button 

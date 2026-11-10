@@ -1,32 +1,214 @@
-# website:
+# learntk — an open-source course platform
 
-https://learntk.vercel.app
+A small, open-source learning platform for cohort-based courses. Learners sign in
+with Discord, access is decided by a role in your community server, and lessons
+render as a documentation site.
 
-https://learntk.vercel.app/24b
+- **Live site:** <https://learntk.vercel.app>
+- **Course:** <https://learntk.vercel.app/24b>
+- **Stack:** Astro 5 (SSR) · Starlight · Tailwind · Vercel · Discord OAuth2
 
-https://learntk-auth.vercel.app
+The goal is Teachable-style functionality without a SaaS dependency: public sales
+pages, gated curriculum, learner accounts, progress and certificates — all
+driven by a Discord community you already run.
 
+---
 
+## How access control works
 
-## this project setup
+This is the part that used to be broken, so it is worth reading first.
 
-npm create cloudflare@latest -- my-astro-app --framework=astro
+```
+ ┌──────────────┐   1. /api/login          ┌─────────────────────┐
+ │   Browser    │ ───────────────────────► │  OAuth start        │
+ │              │                          │  state cookie       │
+ │              │ ◄─── 302 discord.com ─── │                     │
+ └──────┬───────┘                          └─────────────────────┘
+        │ 2. user approves scopes:
+        │    identify, email, guilds.members.read
+        ▼
+ ┌──────────────┐   3. /api?code=…&state=… ┌─────────────────────┐
+ │   Discord    │ ───────────────────────► │  Callback           │
+ └──────────────┘                          │  · verify state     │
+                                           │  · exchange code    │
+                                           │  · read guild roles │
+                                           │  · mint session     │
+                                           └──────────┬──────────┘
+                                                      │ 4. signed HttpOnly cookie
+                                                      ▼
+                                           ┌─────────────────────┐
+                                           │  src/middleware.ts  │
+                                           │  gate every request │
+                                           └─────────────────────┘
+```
 
-npx astro add react &&
+1. **`/api/login`** creates a random `state` nonce, stores it in a short-lived
+   HttpOnly cookie, and redirects to Discord.
+2. Discord asks the user to approve `identify email guilds.members.read`.
+   `guilds.members.read` lets us read *the current user's* membership — and
+   therefore their roles — in one specific server, with no bot token.
+3. **`/api`** (the registered redirect URI) verifies `state`, exchanges the code,
+   and calls `GET /users/@me/guilds/{guild}/member`.
+4. A **signed** session is issued. The cookie is `HttpOnly`, `SameSite=Lax`, and
+   HMAC-SHA256 signed, so it cannot be read or edited by JavaScript or by the
+   user.
 
-npx astro add starlight &&
+`src/middleware.ts` then runs on every request and gates `/24b`, `/course`,
+`/welcome` and friends. Pages do not contain their own auth checks.
 
-npm install firebase firebase-admin @paypal/react-paypal-js @astrojs/rss
+### Why the old flow failed
 
-## not yet implemented
+| Symptom | Root cause |
+| --- | --- |
+| Signing in bounced back to the home page | The callback awaited a Firestore read that returned `403`, the error was swallowed, and `redirect` stayed `""`. |
+| Anyone could read the course | `/24b` was a **prerendered** Starlight route. Static HTML never reaches SSR, so middleware could not protect it. |
+| Anyone could claim a membership | The session was a plain JSON cookie (`{"subscribed":true}`), and `/api/reverify?code=<any discord id>` minted a session for **any** user id. |
+| Lesson PDFs were public | They lived in `public/Lesson/`, so Vercel served them before Astro ran. |
+| Members with the role still saw nothing | `login()` was called without `await`, so the profile was read before it was written. |
 
-functionaility like discord sign in callback and not sure is firebase working normally
+All five are fixed. The forgeable cookie and the `/api/reverify` IDOR are gone,
+not mitigated.
 
-vercel big brother!!! <- save my life with serverless function fully support
+### Security properties
 
-## process
+- Sessions are HMAC-SHA256 signed and expiry-checked on every request.
+- `state` prevents login CSRF.
+- Access is decided per request from the signed session, never from client input.
+- Lesson PDFs are inlined into a server-only module and streamed by
+  `/api/lessons/:file` after the session check — they are not static files.
+- No OAuth refresh tokens are stored anywhere. (The previous build wrote them to
+  a client-readable Firestore collection.)
+- `next=` redirects are validated to be same-site relative paths, so the login
+  endpoint cannot be used as an open redirect.
 
-(!reg && !login && !cookie) callback store all detail + reg + login + cookie
-(cookie && !login) check cookie date and renew session
-(!subscribe ) renew session
+---
 
+## Local development
+
+```bash
+cd client
+npm install
+cp .env.example .env.local   # then fill in the values
+npm run dev                  # http://localhost:4321
+```
+
+`npm run build` runs `astro check` followed by `astro build`.
+
+> **Note on installs:** npm may block postinstall scripts. This repo declares the
+> ones it needs under `allowScripts` in `client/package.json` (`esbuild`,
+> `sharp`, `workerd`).
+
+### Environment variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `DISCORD_CLIENT_ID` | yes | Discord application id |
+| `DISCORD_CLIENT_SECRET` | yes | Discord application secret |
+| `DISCORD_REDIRECT_URI` | yes | Must match the portal exactly |
+| `SESSION_SECRET` | recommended | Cookie signing key |
+| `DISCORD_GUILD_ID` | no | Server that owns membership (defaults to `746789586914639933`) |
+| `DISCORD_MEMBER_ROLE_IDS` | no | Comma separated role ids that unlock the course |
+| `DISCORD_ADMIN_ROLE_IDS` | no | Comma separated instructor role ids |
+| `DISCORD_INVITE_URL` | no | Where "Join the community server" points |
+| `SITE_URL` | no | Canonical origin |
+| `FIREBASE` | no | Public Firebase config JSON, for optional progress mirroring |
+
+### Discord application setup
+
+1. <https://discord.com/developers/applications> → **New Application**.
+2. **OAuth2 → Redirects** → add `https://your-domain/api` (and
+   `http://localhost:4321/api` for local work).
+3. Copy the client id and secret into your environment.
+4. Make sure the roles listed in `DISCORD_MEMBER_ROLE_IDS` exist in your server
+   and that paying members actually receive them.
+
+### Testing auth without a Discord account
+
+`client/scripts/mint-session.mjs` signs a session with the same code the app
+uses, which is handy for local checks:
+
+```bash
+cd client
+COOKIE=$(node scripts/mint-session.mjs member)   # or: noRole | expired | tampered
+curl -i -H "Cookie: learntk_session=$COOKIE" http://localhost:4321/24b
+```
+
+It reads `DISCORD_CLIENT_SECRET` from `.env.local`. **Never run it against
+production credentials.**
+
+---
+
+## Authoring content
+
+Course pages are Markdown in `client/src/content/docs/<course>/`:
+
+```
+client/src/content/docs/24b/
+├── index.mdx    # /24b
+├── Week1.md     # /24b/week1
+└── Week7.md
+```
+
+To add a week:
+
+1. Add `Week8.md` to the folder.
+2. Add one entry to `client/src/data/courses.ts` in the `24b` course.
+
+The dashboard, progress bar and "Continue" button all derive from
+`src/data/courses.ts`, so nothing else needs touching.
+
+Put downloadable material in `client/src/assets/lessons/` and link it as
+`/api/lessons/<file>`. Anything in `client/public/` is served to the public
+without an auth check — do not put paid content there.
+
+---
+
+## Deployment
+
+The site is deployed on Vercel.
+
+```bash
+cd client
+vercel link
+vercel env pull .env.local        # optional: copy production config locally
+vercel deploy                     # preview
+vercel deploy --prod              # production
+```
+
+If you change the callback path, update **both** `DISCORD_REDIRECT_URI` and the
+Discord developer portal, or the token exchange will fail with
+`invalid_grant`.
+
+---
+
+## Teachable parity
+
+| Capability | Status |
+| --- | --- |
+| Public course landing pages | ✅ `client/src/pages/index.astro`, `/buy` |
+| Discord SSO with role-based entitlement | ✅ |
+| Gated curriculum | ✅ `/24b` |
+| Learner dashboard | ✅ `/course` |
+| Lesson progress | ✅ signed session + optional Firestore mirror |
+| Certificate name / profile | ✅ `/welcome` |
+| Certificate issuing | 🚧 scaffolded in `src/data/courses.ts` |
+| Per-lesson comments / Q&A | 🚧 next up |
+| Coupons, bundles, upsells | 🚧 PayPal links exist on `/buy` |
+| Instructor analytics | 🚧 |
+| Webhooks for purchases | 🚧 |
+
+Progress currently lives in the session cookie. That means it is tamper-proof
+and needs no database, but it only survives as long as the session (7 days) and
+does not follow the learner between browsers. The Firestore mirror in
+`src/lib/store.ts` upgrades this transparently once the project's security rules
+are configured; a Cloudflare D1 adapter is the other obvious target.
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)
